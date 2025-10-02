@@ -1,0 +1,5 @@
+com\example\expenseapp\service\ExpenseService.class
+com\example\expenseapp\controller\ExpenseController.class
+com\example\expenseapp\model\Expense.class
+com\example\expenseapp\ExpenseAppApplication.class
+com\example\expenseapp\repository\ExpenseRepository.class
