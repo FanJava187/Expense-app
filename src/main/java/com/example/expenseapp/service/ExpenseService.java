@@ -1,72 +1,88 @@
 package com.example.expenseapp.service;
 
+import com.example.expenseapp.exception.ResourceNotFoundException;
 import com.example.expenseapp.model.Expense;
+import com.example.expenseapp.model.User;
 import com.example.expenseapp.repository.ExpenseRepository;
+import com.example.expenseapp.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ExpenseService {
-    private final ExpenseRepository expenseRepository;
 
-    public ExpenseService(ExpenseRepository expenseRepository) {
-        this.expenseRepository = expenseRepository;
+    @Autowired
+    private ExpenseRepository expenseRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("找不到目前使用者"));
     }
 
     public List<Expense> getAllExpenses() {
-        return expenseRepository.findAll();
+        User user = getCurrentUser();
+        return expenseRepository.findByUserOrderByExpenseDateDesc(user);
     }
 
-    public Optional<Expense> getExpenseById(Long id) {
-        return expenseRepository.findById(id);
+    public Expense getExpenseById(Long id) {
+        User user = getCurrentUser();
+        return expenseRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("找不到 ID 為 " + id + " 的支出紀錄"));
     }
 
     public Expense createExpense(Expense expense) {
+        User user = getCurrentUser();
+        expense.setUser(user);
         return expenseRepository.save(expense);
     }
 
     public Expense updateExpense(Long id, Expense expenseDetails) {
-        return expenseRepository.findById(id).map(expense -> {
-            expense.setTitle(expenseDetails.getTitle());
-            expense.setAmount(expenseDetails.getAmount());
-            expense.setCategory(expenseDetails.getCategory());
-            expense.setExpenseDate(expenseDetails.getExpenseDate());
-            return expenseRepository.save(expense);
-        }).orElseThrow(() -> new RuntimeException("找不到 ID 為 " + id + " 的支出紀錄"));
+        User user = getCurrentUser();
+        Expense expense = expenseRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("找不到 ID 為 " + id + " 的支出紀錄"));
+
+        expense.setTitle(expenseDetails.getTitle());
+        expense.setAmount(expenseDetails.getAmount());
+        expense.setCategory(expenseDetails.getCategory());
+        expense.setExpenseDate(expenseDetails.getExpenseDate());
+
+        return expenseRepository.save(expense);
     }
 
     public void deleteExpense(Long id) {
-        expenseRepository.deleteById(id);
+        User user = getCurrentUser();
+        Expense expense = expenseRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("找不到 ID 為 " + id + " 的支出紀錄"));
+        expenseRepository.delete(expense);
     }
 
-    /**
-     * 根據分類查詢支出
-     */
     public List<Expense> getExpensesByCategory(String category) {
-        return expenseRepository.findByCategory(category);
+        User user = getCurrentUser();
+        return expenseRepository.findByUserAndCategory(user, category);
     }
 
-    /**
-     * 根據日期範圍查詢支出
-     */
     public List<Expense> getExpensesByDateRange(LocalDate startDate, LocalDate endDate) {
-        return expenseRepository.findByExpenseDateBetween(startDate, endDate);
+        User user = getCurrentUser();
+        return expenseRepository.findByUserAndExpenseDateBetween(user, startDate, endDate);
     }
 
-    /**
-     * 根據分類和日期範圍查詢支出
-     */
     public List<Expense> getExpensesByCategoryAndDateRange(String category, LocalDate startDate, LocalDate endDate) {
-        return expenseRepository.findByCategoryAndDateRange(category, startDate, endDate);
+        User user = getCurrentUser();
+        return expenseRepository.findByUserAndCategoryAndDateRange(user, category, startDate, endDate);
     }
 
-    /**
-     * 取得指定日期範圍內的所有分類
-     */
     public List<String> getCategoriesByDateRange(LocalDate startDate, LocalDate endDate) {
-        return expenseRepository.findDistinctCategoriesByDateRange(startDate, endDate);
+        User user = getCurrentUser();
+        return expenseRepository.findDistinctCategoriesByUserAndDateRange(user, startDate, endDate);
     }
 }

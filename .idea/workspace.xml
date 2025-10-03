@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7d3f65c2-6c7e-4dbb-baff-43bab1a7e4ef" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="7d3f65c2-6c7e-4dbb-baff-43bab1a7e4ef" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -15,6 +13,7 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
+        <option value="Interface" />
         <option value="Class" />
       </list>
     </option>
@@ -34,6 +33,9 @@
   &quot;associatedIndex&quot;: 6
 }</component>
   <component name="ProjectId" id="338LMhm8axUtvkvMqdQUsY27EL7" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -42,6 +44,7 @@
   "keyToString": {
     "Application.ExpenseAppApplication.executor": "Debug",
     "JUnit.ExpenseControllerTest.testCreateExpense.executor": "Run",
+    "JUnit.ExpenseControllerTest.testGetAllExpenses.executor": "Debug",
     "JUnit.ExpenseControllerTest.testGetExpenses.executor": "Debug",
     "Maven.expense-app [clean].executor": "Run",
     "Maven.expense-app [package].executor": "Run",
@@ -49,7 +52,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "deletionFromPopupRequiresConfirmation": "false",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "add-first-level",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/Kevin/IdeaProjects/expense-app-backend",
     "project.structure.last.edited": "SDKs",
