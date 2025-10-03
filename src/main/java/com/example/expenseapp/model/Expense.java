@@ -1,5 +1,6 @@
 package com.example.expenseapp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
@@ -13,6 +14,11 @@ public class Expense {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore  // 不要序列化 user 物件，避免循環引用
+    private User user;
 
     @NotBlank(message = "標題不能為空")
     @Size(min = 1, max = 100, message = "標題長度必須在 1-100 字元之間")
@@ -31,10 +37,19 @@ public class Expense {
     @PastOrPresent(message = "日期不能是未來")
     private LocalDate expenseDate;
 
+    // Constructors
     public Expense() {
     }
 
     public Expense(String title, BigDecimal amount, String category, LocalDate expenseDate) {
+        this.title = title;
+        this.amount = amount;
+        this.category = category;
+        this.expenseDate = expenseDate;
+    }
+
+    public Expense(User user, String title, BigDecimal amount, String category, LocalDate expenseDate) {
+        this.user = user;
         this.title = title;
         this.amount = amount;
         this.category = category;
@@ -48,6 +63,14 @@ public class Expense {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public String getTitle() {

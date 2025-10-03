@@ -5,7 +5,58 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7d3f65c2-6c7e-4dbb-baff-43bab1a7e4ef" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/controller/AuthController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/dto/AuthResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/dto/ForgotPasswordRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/dto/LoginRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/dto/MessageResponse.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/dto/RegisterRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/dto/ResetPasswordRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/dto/UserInfo.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/exception/AccountNotVerifiedException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/exception/AccountSuspendedException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/exception/GlobalExceptionHandler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/exception/InvalidCredentialsException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/exception/InvalidTokenException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/exception/ResourceNotFoundException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/exception/TokenExpiredException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/exception/UserAlreadyExistsException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/model/User.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/model/VerificationToken.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/repository/UserRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/repository/VerificationTokenRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/security/JwtAuthenticationFilter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/security/JwtService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/security/SecurityConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/security/UserDetailsServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/service/AuthService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/service/EmailService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/com/example/expenseapp/controller/AuthControllerTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/schema.sql" beforeDir="false" afterPath="$PROJECT_DIR$/schema.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/controller/ExpenseController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/controller/ExpenseController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/initializer/DataInitializer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/model/Expense.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/model/Expense.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/repository/ExpenseRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/repository/ExpenseRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/service/ExpenseService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/expenseapp/service/ExpenseService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/example/expenseapp/controller/ExpenseControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/example/expenseapp/controller/ExpenseControllerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/expenseapp/controller/ExpenseController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/expenseapp/controller/ExpenseController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/expenseapp/initializer/DataInitializer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/expenseapp/model/Expense.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/expenseapp/model/Expense.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/expenseapp/repository/ExpenseRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/expenseapp/repository/ExpenseRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/example/expenseapp/service/ExpenseService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/example/expenseapp/service/ExpenseService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/expense-app-0.0.1-SNAPSHOT.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/expense-app-0.0.1-SNAPSHOT.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/expense-app-0.0.1-SNAPSHOT.jar.original" beforeDir="false" afterPath="$PROJECT_DIR$/target/expense-app-0.0.1-SNAPSHOT.jar.original" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/surefire-reports/TEST-com.example.expenseapp.controller.ExpenseControllerTest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/target/surefire-reports/TEST-com.example.expenseapp.controller.ExpenseControllerTest.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/surefire-reports/com.example.expenseapp.controller.ExpenseControllerTest.txt" beforeDir="false" afterPath="$PROJECT_DIR$/target/surefire-reports/com.example.expenseapp.controller.ExpenseControllerTest.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/test-classes/com/example/expenseapp/controller/ExpenseControllerTest.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/test-classes/com/example/expenseapp/controller/ExpenseControllerTest.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -15,6 +66,7 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
+        <option value="Interface" />
         <option value="Class" />
       </list>
     </option>
@@ -34,6 +86,9 @@
   &quot;associatedIndex&quot;: 6
 }</component>
   <component name="ProjectId" id="338LMhm8axUtvkvMqdQUsY27EL7" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -42,6 +97,7 @@
   "keyToString": {
     "Application.ExpenseAppApplication.executor": "Debug",
     "JUnit.ExpenseControllerTest.testCreateExpense.executor": "Run",
+    "JUnit.ExpenseControllerTest.testGetAllExpenses.executor": "Debug",
     "JUnit.ExpenseControllerTest.testGetExpenses.executor": "Debug",
     "Maven.expense-app [clean].executor": "Run",
     "Maven.expense-app [package].executor": "Run",

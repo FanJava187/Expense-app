@@ -38,9 +38,8 @@ public class ExpenseController {
     @Operation(summary = "依 ID 查詢支出紀錄")
     @GetMapping("/{id}")
     public ResponseEntity<Expense> getExpenseById(@PathVariable Long id) {
-        return expenseService.getExpenseById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Expense expense = expenseService.getExpenseById(id);
+        return ResponseEntity.ok(expense);
     }
 
     @Operation(summary = "新增支出紀錄")
@@ -55,12 +54,8 @@ public class ExpenseController {
     public ResponseEntity<Expense> updateExpense(
             @PathVariable Long id,
             @Valid @RequestBody Expense expenseDetails) {
-        try {
-            Expense updatedExpense = expenseService.updateExpense(id, expenseDetails);
-            return ResponseEntity.ok(updatedExpense);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        Expense updatedExpense = expenseService.updateExpense(id, expenseDetails);
+        return ResponseEntity.ok(updatedExpense);
     }
 
     @Operation(summary = "刪除支出紀錄")

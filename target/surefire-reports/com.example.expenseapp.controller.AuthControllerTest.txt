@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.example.expenseapp.controller.AuthControllerTest
+-------------------------------------------------------------------------------
+Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.92 s -- in com.example.expenseapp.controller.AuthControllerTest
