@@ -1,0 +1,35 @@
+# 資料庫設定
+spring.datasource.url=jdbc:mysql://localhost:3306/expense_db
+spring.datasource.username=root
+spring.datasource.password=請填入你的密碼
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# JPA 設定
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.open-in-view=false
+
+# Swagger OpenAPI
+springdoc.api-docs.enabled=true
+springdoc.swagger-ui.enabled=true
+
+# JWT 設定（請自行產生密鑰）
+jwt.secret=請使用線上工具產生至少256位元的密鑰
+jwt.expiration=3600000
+
+# Email 設定（Mailtrap）
+spring.mail.host=smtp.mailtrap.io
+spring.mail.port=2525
+spring.mail.username=請填入你的Mailtrap帳號
+spring.mail.password=請填入你的Mailtrap密碼
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+
+# Email 寄件人資訊
+app.email.from=noreply@expenseapp.com
+app.email.from-name=Expense App
+
+# 應用程式設定
+app.frontend.url=http://localhost:8080
+app.token.email-verification.expiration=86400000
+app.token.password-reset.expiration=3600000

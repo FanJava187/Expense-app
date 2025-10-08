@@ -25,8 +25,8 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @NotBlank(message = "密碼不能為空")
-    @Column(nullable = false)
+    // OAuth 使用者不需要密碼，所以移除 @NotBlank
+    @Column(nullable = true)
     private String password;
 
     @NotBlank(message = "姓名不能為空")

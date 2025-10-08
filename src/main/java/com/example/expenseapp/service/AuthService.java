@@ -64,6 +64,14 @@ public class AuthService {
             throw new UserAlreadyExistsException("Email 已被註冊");
         }
 
+        // 手動驗證密碼（因為 User entity 移除了 @NotBlank）
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("密碼不能為空");
+        }
+        if (request.getPassword().length() < 8) {
+            throw new IllegalArgumentException("密碼長度至少 8 個字元");
+        }
+
         // 建立新使用者
         User user = new User();
         user.setUsername(request.getUsername());
