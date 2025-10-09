@@ -51,6 +51,7 @@
 | OAuth2 Client | 6.4.5 | Google 登入 |
 | MySQL | 8.x | 資料庫 |
 | JWT (jjwt) | 0.11.5 | Token 管理 |
+| dotenv-java | 3.0.0 | 環境變數管理 |
 | JavaMail | - | Email 發送 |
 | Swagger | 2.2.0 | API 文件 |
 | JUnit 5 | - | 單元測試 |
@@ -83,21 +84,47 @@ CREATE DATABASE expense_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 執行建表 SQL（位於專案根目錄）
 
-### 3. 設定應用程式
-```bash
-# 複製範例設定檔
-cp src/main/resources/application.properties.example src/main/resources/application.properties
+### 3. 設定環境變數
+本專案使用 `.env` 文件管理環境變數，更安全且易於管理。
 
-# 編輯設定檔，填入真實資訊
-notepad src/main/resources/application.properties  # Windows
-nano src/main/resources/application.properties     # Linux/Mac
+```bash
+# 複製環境變數範例檔
+cp .env.example .env
+
+# 編輯 .env 檔案，填入真實資訊
+notepad .env     # Windows
+nano .env        # Linux/Mac
 ```
 
-必填項目：
-- MySQL 密碼
-- JWT Secret（至少 256 位元）
-- Mailtrap SMTP 帳密
-- Google OAuth Client ID & Secret
+**必填項目：**
+- `DB_PASSWORD` - MySQL 密碼
+- `JWT_SECRET` - JWT 密鑰（至少 256 位元）
+- `MAIL_USERNAME` & `MAIL_PASSWORD` - Mailtrap SMTP 帳密
+- `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET` - Google OAuth 憑證
+
+**`.env` 檔案範例：**
+```properties
+# 資料庫設定
+DB_URL=jdbc:mysql://localhost:3306/expense_db
+DB_USERNAME=root
+DB_PASSWORD=你的MySQL密碼
+
+# JWT 設定
+JWT_SECRET=你的256位元密鑰
+JWT_EXPIRATION=3600000
+
+# Email 設定（Mailtrap）
+MAIL_HOST=smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=你的Mailtrap帳號
+MAIL_PASSWORD=你的Mailtrap密碼
+
+# Google OAuth
+GOOGLE_CLIENT_ID=你的Google_Client_ID
+GOOGLE_CLIENT_SECRET=你的Google_Client_Secret
+```
+
+> **注意**：`.env` 文件已加入 `.gitignore`，不會被提交到版本控制系統
 
 ### 4. 啟動應用
 ```bash
@@ -262,8 +289,13 @@ expense-app/
 │   └── exception/               # 例外處理
 ├── src/main/resources/
 │   ├── static/                  # 靜態資源
-│   └── application.properties   # 設定檔（不提交）
-├── src/test/java/               # 測試程式碼
+│   └── application.properties   # Spring Boot 設定
+├── src/test/java/
+│   ├── controller/              # Controller 測試
+│   └── config/
+│       └── DotenvTestConfig.java # 測試環境變數配置
+├── .env                         # 環境變數（不提交）
+├── .env.example                 # 環境變數範例
 ├── pom.xml                      # Maven 設定
 ├── DOCUMENTATION.md             # 詳細文件
 └── README.md                    # 本文件
@@ -273,24 +305,45 @@ expense-app/
 
 ## 🔧 設定說明
 
-### 開發環境 (application.properties)
+### 環境變數管理
+本專案使用 **dotenv-java** 管理環境變數，提供以下優勢：
+- ✅ 敏感資訊不會被提交到 Git
+- ✅ 開發和生產環境配置分離
+- ✅ 團隊協作時配置更簡單
+- ✅ 符合 [12-Factor App](https://12factor.net/) 原則
+
+### 開發環境設定
+1. 複製 `.env.example` 為 `.env`
+2. 填入真實的環境變數值
+3. Spring Boot 會自動從 `.env` 載入配置
+
+### application.properties
+`application.properties` 使用環境變數占位符：
 ```properties
-# 開發時的設定
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-springdoc.swagger-ui.enabled=true
+# 資料庫設定
+spring.datasource.url=${DB_URL}
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
+
+# JWT 設定
+jwt.secret=${JWT_SECRET}
+jwt.expiration=${JWT_EXPIRATION}
+
+# Email 設定
+spring.mail.host=${MAIL_HOST}
+spring.mail.username=${MAIL_USERNAME}
+spring.mail.password=${MAIL_PASSWORD}
 ```
 
-### 生產環境 (application-prod.properties)
-```properties
-# 生產環境建議
-spring.jpa.hibernate.ddl-auto=validate
-spring.jpa.show-sql=false
-springdoc.swagger-ui.enabled=false
+### 生產環境部署
+生產環境建議使用系統環境變數或容器配置（如 Docker、Kubernetes）：
+```bash
+# 設置環境變數
+export DB_PASSWORD=your_password
+export JWT_SECRET=your_secret
 
-# 使用環境變數
-spring.datasource.password=${DB_PASSWORD}
-jwt.secret=${JWT_SECRET}
+# 啟動應用
+java -jar expense-app.jar
 ```
 
 ---

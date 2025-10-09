@@ -15,6 +15,7 @@
 - **Spring Security + JWT**
 - **Spring Security OAuth2 Client**
 - **MySQL 8.x**
+- **dotenv-java 3.0.0 (環境變數管理)**
 - **Bean Validation (Hibernate Validator)**
 - **Swagger / OpenAPI (springdoc-openapi)**
 - **JavaMail (Email 發送)**
@@ -37,13 +38,53 @@ CREATE DATABASE expense_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 - **verification_tokens** - Email 驗證和密碼重設 Token
 - **expenses** - 支出紀錄
 
-### 3. 設定應用程式連線
-複製 `application.properties.example` 為 `application.properties`：
+### 3. 設定環境變數
+本專案使用 `.env` 文件管理環境變數，確保敏感資訊不會被提交到版本控制。
+
+#### 建立 .env 文件
 ```bash
-cp src/main/resources/application.properties.example src/main/resources/application.properties
+# 複製環境變數範例檔
+cp .env.example .env
+
+# 編輯 .env 檔案
+nano .env    # Linux/Mac
+notepad .env # Windows
 ```
 
-然後填入真實的資訊。
+#### 環境變數說明
+`.env` 文件包含以下設定：
+
+**資料庫設定**
+- `DB_URL` - 資料庫連線 URL
+- `DB_USERNAME` - 資料庫使用者名稱
+- `DB_PASSWORD` - 資料庫密碼
+
+**JWT 設定**
+- `JWT_SECRET` - JWT 加密密鑰（至少 256 位元）
+- `JWT_EXPIRATION` - Token 有效期（毫秒）
+
+**Email 設定**
+- `MAIL_HOST` - SMTP 主機
+- `MAIL_PORT` - SMTP 端口
+- `MAIL_USERNAME` - SMTP 帳號
+- `MAIL_PASSWORD` - SMTP 密碼
+- `EMAIL_FROM` - 寄件人 Email
+- `EMAIL_FROM_NAME` - 寄件人名稱
+
+**應用程式設定**
+- `FRONTEND_URL` - 前端應用網址
+- `TOKEN_EMAIL_VERIFICATION_EXPIRATION` - Email 驗證 Token 有效期
+- `TOKEN_PASSWORD_RESET_EXPIRATION` - 密碼重設 Token 有效期
+
+**Google OAuth**
+- `GOOGLE_CLIENT_ID` - Google OAuth Client ID
+- `GOOGLE_CLIENT_SECRET` - Google OAuth Client Secret
+
+#### 自動載入機制
+專案使用 **dotenv-java** 自動載入環境變數：
+- 應用啟動時，`ExpenseAppApplication.java` 會自動讀取 `.env` 文件
+- 測試環境使用 `DotenvTestConfig.java` 確保測試也能正確載入環境變數
+- `application.properties` 使用 `${變數名}` 語法引用環境變數
 
 ---
 
@@ -81,9 +122,15 @@ expense-app/
 ├── src/main/resources
 │   ├── static
 │   │   └── oauth2-test.html              # OAuth 測試頁面
-│   └── application.properties            # 應用設定（不提交）
+│   └── application.properties            # Spring Boot 設定
 │
-├── src/test/java                          # 單元測試
+├── src/test/java
+│   ├── controller                         # Controller 測試
+│   └── config
+│       └── DotenvTestConfig.java          # 測試環境變數配置
+│
+├── .env                                   # 環境變數（不提交）
+├── .env.example                           # 環境變數範例
 ├── pom.xml
 ├── DOCUMENTATION.md                       # 本文件
 └── README.md
@@ -517,12 +564,30 @@ WHERE expires_at < NOW() AND used_at IS NULL;
 
 ## 🆘 常見問題
 
-### Q1: 無法啟動應用
+### Q1: 無法啟動應用 - 找不到環境變數
+**錯誤訊息**：`Could not resolve placeholder 'DB_PASSWORD' in value "${DB_PASSWORD}"`
+
+**解決方法**：
+1. 確認專案根目錄有 `.env` 文件
+2. 檢查 `.env` 文件內容是否正確
+3. 確認環境變數名稱拼寫正確（區分大小寫）
+4. 重新啟動應用
+
+### Q2: 測試失敗 - 環境變數未載入
+**問題**：執行 `mvn test` 或 `mvn package` 時測試失敗
+
+**解決方法**：
+1. 確認測試類已加入 `@ContextConfiguration(initializers = DotenvTestConfig.class)`
+2. 檢查 `DotenvTestConfig.java` 是否存在於 `src/test/java/config/` 目錄
+3. 確認 `.env` 文件存在且格式正確
+
+### Q3: 無法啟動應用 - MySQL 連線失敗
 - 檢查 MySQL 是否啟動
-- 檢查 application.properties 設定
+- 檢查 `.env` 中的資料庫設定
+- 確認資料庫 `expense_db` 已建立
 - 檢查 8080 port 是否被佔用
 
-### Q2: 登入失敗
+### Q4: 登入失敗
 - 檢查帳號是否已驗證 Email
 - 檢查密碼是否正確
 - 查看 logs 錯誤訊息
@@ -561,9 +626,10 @@ WHERE expires_at < NOW() AND used_at IS NULL;
 ## 📝 注意事項
 
 ### 開發環境
-- MySQL 密碼、JWT Secret、SMTP 密碼不要提交到 Git
-- 使用 `.gitignore` 排除 `application.properties`
-- 提供 `application.properties.example` 作為範本
+- **使用 .env 管理環境變數**：所有敏感資訊（MySQL 密碼、JWT Secret、SMTP 密碼等）都存放在 `.env` 文件中
+- **不要提交 .env 到 Git**：`.env` 已加入 `.gitignore`，確保敏感資訊不會被上傳
+- **提供 .env.example 作為範本**：團隊成員可以複製此範例並填入自己的設定
+- **使用 dotenv-java 自動載入**：應用啟動和測試時會自動讀取環境變數
 
 ### 生產環境
 - 設定 `spring.jpa.hibernate.ddl-auto=validate`
@@ -582,5 +648,24 @@ WHERE expires_at < NOW() AND used_at IS NULL;
 
 ---
 
-**最後更新日期：** 2025-10-08
-**版本：** 1.0.0（已完成第一、二階段）
+---
+
+## 🔄 更新日誌
+
+### v1.0.1 (2025-10-09)
+- ✅ 新增 dotenv-java 支援，使用 .env 文件管理環境變數
+- ✅ 新增 DotenvTestConfig 確保測試環境正確載入環境變數
+- ✅ 更新文件說明環境變數設定方式
+- ✅ 提供 .env.example 範例文件
+
+### v1.0.0 (2025-10-08)
+- ✅ 完成使用者認證系統（註冊、登入、Email 驗證、忘記密碼）
+- ✅ 完成 Google OAuth 2.0 登入
+- ✅ 完成支出管理 CRUD 功能
+- ✅ 完成分類查詢、日期範圍查詢
+- ✅ 完成 45 個單元測試
+
+---
+
+**最後更新日期：** 2025-10-09
+**版本：** 1.0.1

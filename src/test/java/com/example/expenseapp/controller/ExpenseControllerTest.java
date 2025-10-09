@@ -1,5 +1,6 @@
 package com.example.expenseapp.controller;
 
+import com.example.expenseapp.config.DotenvTestConfig;
 import com.example.expenseapp.model.Expense;
 import com.example.expenseapp.model.User;
 import com.example.expenseapp.repository.ExpenseRepository;
@@ -16,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -27,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ContextConfiguration(initializers = DotenvTestConfig.class)
 class ExpenseControllerTest {
 
     @Autowired
