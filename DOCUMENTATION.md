@@ -2,8 +2,8 @@
 
 ## 📌 專案簡介
 本專案是一個功能完整的 **支出管理系統 (Expense Management App)**，  
-使用 **Spring Boot 3 + Spring Data JPA + MySQL + Swagger(OpenAPI)** 開發。  
-提供完整的 **CRUD REST API**、**資料驗證**、**分類查詢**、**日期範圍查詢**等功能。
+使用 **Spring Boot 3 + Spring Data JPA + MySQL + Spring Security + OAuth2** 開發。  
+提供完整的 **使用者認證**、**CRUD REST API**、**資料驗證**、**分類查詢**、**日期範圍查詢**等功能。
 
 ---
 
@@ -12,9 +12,13 @@
 - **Spring Boot 3.4.5**
 - **Spring Web (REST API)**
 - **Spring Data JPA (Hibernate)**
+- **Spring Security + JWT**
+- **Spring Security OAuth2 Client**
 - **MySQL 8.x**
+- **dotenv-java 3.0.0 (環境變數管理)**
 - **Bean Validation (Hibernate Validator)**
 - **Swagger / OpenAPI (springdoc-openapi)**
+- **JavaMail (Email 發送)**
 - **JUnit 5 + MockMvc (單元測試)**
 
 ---
@@ -27,44 +31,60 @@ CREATE DATABASE expense_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 ### 2. 建立資料表
-```sql
-USE expense_db;
+請執行 SQL 腳本檔案（完整內容請見專案根目錄）
 
-CREATE TABLE expenses (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主鍵 ID',
-    title VARCHAR(100) NOT NULL COMMENT '支出標題',
-    amount DECIMAL(12, 2) NOT NULL COMMENT '支出金額',
-    category VARCHAR(50) NOT NULL COMMENT '支出分類',
-    expense_date DATE NOT NULL COMMENT '支出日期',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '建立時間',
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新時間',
-    CONSTRAINT chk_amount_positive CHECK (amount > 0)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='支出紀錄表';
+主要資料表：
+- **users** - 使用者資料（支援傳統註冊和 Google OAuth）
+- **verification_tokens** - Email 驗證和密碼重設 Token
+- **expenses** - 支出紀錄
 
--- 建立索引以提升查詢效能
-CREATE INDEX idx_category ON expenses(category);
-CREATE INDEX idx_expense_date ON expenses(expense_date);
-CREATE INDEX idx_category_date ON expenses(category, expense_date);
+### 3. 設定環境變數
+本專案使用 `.env` 文件管理環境變數，確保敏感資訊不會被提交到版本控制。
+
+#### 建立 .env 文件
+```bash
+# 複製環境變數範例檔
+cp .env.example .env
+
+# 編輯 .env 檔案
+nano .env    # Linux/Mac
+notepad .env # Windows
 ```
 
-### 3. 設定應用程式連線
-修改 `src/main/resources/application.properties`：
-```properties
-# 資料庫連線設定
-spring.datasource.url=jdbc:mysql://localhost:3306/expense_db
-spring.datasource.username=root
-spring.datasource.password=123456
-spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+#### 環境變數說明
+`.env` 文件包含以下設定：
 
-# JPA 設定
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-spring.jpa.open-in-view=false
+**資料庫設定**
+- `DB_URL` - 資料庫連線 URL
+- `DB_USERNAME` - 資料庫使用者名稱
+- `DB_PASSWORD` - 資料庫密碼
 
-# Swagger OpenAPI
-springdoc.api-docs.enabled=true
-springdoc.swagger-ui.enabled=true
-```
+**JWT 設定**
+- `JWT_SECRET` - JWT 加密密鑰（至少 256 位元）
+- `JWT_EXPIRATION` - Token 有效期（毫秒）
+
+**Email 設定**
+- `MAIL_HOST` - SMTP 主機
+- `MAIL_PORT` - SMTP 端口
+- `MAIL_USERNAME` - SMTP 帳號
+- `MAIL_PASSWORD` - SMTP 密碼
+- `EMAIL_FROM` - 寄件人 Email
+- `EMAIL_FROM_NAME` - 寄件人名稱
+
+**應用程式設定**
+- `FRONTEND_URL` - 前端應用網址
+- `TOKEN_EMAIL_VERIFICATION_EXPIRATION` - Email 驗證 Token 有效期
+- `TOKEN_PASSWORD_RESET_EXPIRATION` - 密碼重設 Token 有效期
+
+**Google OAuth**
+- `GOOGLE_CLIENT_ID` - Google OAuth Client ID
+- `GOOGLE_CLIENT_SECRET` - Google OAuth Client Secret
+
+#### 自動載入機制
+專案使用 **dotenv-java** 自動載入環境變數：
+- 應用啟動時，`ExpenseAppApplication.java` 會自動讀取 `.env` 文件
+- 測試環境使用 `DotenvTestConfig.java` 確保測試也能正確載入環境變數
+- `application.properties` 使用 `${變數名}` 語法引用環境變數
 
 ---
 
@@ -73,375 +93,551 @@ springdoc.swagger-ui.enabled=true
 expense-app/
 ├── src/main/java/com/example/expenseapp
 │   ├── controller
-│   │   └── ExpenseController.java       # REST API 控制器
+│   │   ├── AuthController.java           # 認證 API
+│   │   └── ExpenseController.java        # 支出 API
 │   ├── model
-│   │   └── Expense.java                 # 實體模型（含驗證規則）
+│   │   ├── User.java                     # 使用者實體
+│   │   ├── VerificationToken.java        # 驗證 Token
+│   │   └── Expense.java                  # 支出實體
 │   ├── repository
-│   │   └── ExpenseRepository.java       # 資料存取層（含查詢方法）
+│   │   ├── UserRepository.java
+│   │   ├── VerificationTokenRepository.java
+│   │   └── ExpenseRepository.java
 │   ├── service
-│   │   └── ExpenseService.java          # 業務邏輯層
-│   ├── initializer
-│   │   └── DataInitializer.java         # 初始化範例資料
-│   └── ExpenseAppApplication.java       # 主程式
-│
-├── src/test/java/com/example/expenseapp
-│   └── ExpenseControllerTest.java       # 控制器單元測試（17 個測試案例）
+│   │   ├── AuthService.java              # 認證邏輯
+│   │   ├── EmailService.java             # Email 發送
+│   │   └── ExpenseService.java           # 支出邏輯
+│   ├── security
+│   │   ├── SecurityConfig.java           # Security 設定
+│   │   ├── JwtService.java               # JWT 處理
+│   │   ├── JwtAuthenticationFilter.java  # JWT 過濾器
+│   │   ├── UserDetailsServiceImpl.java   # 使用者載入
+│   │   ├── CustomOAuth2UserService.java  # OAuth2 處理
+│   │   ├── OAuth2AuthenticationSuccessHandler.java
+│   │   └── OAuth2AuthenticationFailureHandler.java
+│   ├── dto                                # 資料傳輸物件
+│   ├── exception                          # 例外處理
+│   └── ExpenseAppApplication.java
 │
 ├── src/main/resources
-│   └── application.properties           # 應用程式設定
+│   ├── static
+│   │   └── oauth2-test.html              # OAuth 測試頁面
+│   └── application.properties            # Spring Boot 設定
 │
-├── pom.xml                               # Maven 依賴管理
-├── DOCUMENTATION.md                      # 本文件
-└── README.md                             # 專案說明
+├── src/test/java
+│   ├── controller                         # Controller 測試
+│   └── config
+│       └── DotenvTestConfig.java          # 測試環境變數配置
+│
+├── .env                                   # 環境變數（不提交）
+├── .env.example                           # 環境變數範例
+├── pom.xml
+├── DOCUMENTATION.md                       # 本文件
+└── README.md
 ```
 
 ---
 
-## 🔍 資料模型
+## 🔐 認證系統
 
-### Expense 實體
-| 欄位 | 類型 | 說明 | 驗證規則 |
-|------|------|------|----------|
-| id | Long | 主鍵（自動產生） | - |
-| title | String | 支出標題 | 必填，1-100 字元 |
-| amount | BigDecimal | 支出金額 | 必填，必須 > 0 |
-| category | String | 支出分類 | 必填，最多 50 字元 |
-| expenseDate | LocalDate | 支出日期 | 必填，不能是未來 |
-| createdAt | Timestamp | 建立時間 | 自動產生 |
-| updatedAt | Timestamp | 更新時間 | 自動更新 |
+### 支援的登入方式
+
+#### 1. 傳統帳號密碼登入
+- 使用者註冊（需 Email 驗證）
+- Email 驗證
+- 登入（返回 JWT Token）
+- 忘記密碼
+- 密碼重設
+
+#### 2. Google OAuth 2.0 登入
+- 使用 Google 帳號一鍵登入
+- 自動建立使用者帳號
+- 返回統一的 JWT Token
 
 ---
 
 ## 📑 REST API 文件
 
-### 基本 CRUD 操作
+### 認證相關 API
 
-#### 1. 新增支出
+#### 註冊
 ```http
-POST /api/expenses
+POST /api/auth/register
 Content-Type: application/json
 
 {
-  "title": "午餐 - 便當",
-  "amount": 120.50,
-  "category": "餐飲",
-  "expenseDate": "2025-09-30"
+  "username": "john_doe",
+  "email": "john@example.com",
+  "password": "SecurePass123",
+  "name": "John Doe"
 }
 
-回應: 201 Created
+回應 201 Created:
 {
-  "id": 1,
-  "title": "午餐 - 便當",
-  "amount": 120.50,
-  "category": "餐飲",
-  "expenseDate": "2025-09-30"
+  "message": "註冊成功！請檢查您的 Email 完成驗證"
 }
 ```
 
-#### 2. 查詢所有支出
+#### 登入
 ```http
-GET /api/expenses
+POST /api/auth/login
+Content-Type: application/json
 
-回應: 200 OK
-[
-  {
+{
+  "usernameOrEmail": "john_doe",
+  "password": "SecurePass123"
+}
+
+成功回應 200 OK:
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "type": "Bearer",
+  "expiresIn": 3600000,
+  "user": {
     "id": 1,
-    "title": "早餐 - 蛋餅豆漿",
-    "amount": 50.00,
-    "category": "餐飲",
-    "expenseDate": "2025-09-28"
-  },
-  ...
-]
+    "username": "john_doe",
+    "email": "john@example.com",
+    "name": "John Doe",
+    "status": "ACTIVE"
+  }
+}
 ```
 
-#### 3. 根據 ID 查詢支出
+#### Email 驗證
 ```http
-GET /api/expenses/{id}
+GET /api/auth/verify?token={驗證Token}
 
-回應: 200 OK（找到）或 404 Not Found（找不到）
+回應 200 OK:
+{
+  "message": "Email 驗證成功！您現在可以登入了"
+}
 ```
 
-#### 4. 更新支出
+#### 忘記密碼
 ```http
-PUT /api/expenses/{id}
+POST /api/auth/forgot-password
 Content-Type: application/json
 
 {
-  "title": "午餐 - 自助餐",
-  "amount": 150.00,
-  "category": "餐飲",
-  "expenseDate": "2025-09-30"
+  "email": "john@example.com"
 }
 
-回應: 200 OK
+回應 200 OK:
+{
+  "message": "密碼重設信已發送，請檢查您的 Email"
+}
 ```
 
-#### 5. 刪除支出
+#### 重設密碼
 ```http
-DELETE /api/expenses/{id}
+POST /api/auth/reset-password
+Content-Type: application/json
 
-回應: 204 No Content
+{
+  "token": "重設Token",
+  "newPassword": "NewSecurePass123"
+}
+
+回應 200 OK:
+{
+  "message": "密碼已成功重設，請使用新密碼登入"
+}
+```
+
+#### Google OAuth 登入
+```http
+GET /oauth2/authorization/google
+
+# 會重定向到 Google 登入頁面
+# 授權後返回：
+http://localhost:8080/oauth2-test.html?token=xxx&username=xxx&email=xxx&name=xxx
 ```
 
 ---
 
-### 查詢功能
+### 支出管理 API
 
-#### 6. 根據分類查詢支出
+**所有支出 API 都需要 JWT Token 認證**
+
+#### 新增支出
 ```http
-GET /api/expenses/category/{category}
+POST /api/expenses
+Authorization: Bearer {your_token}
+Content-Type: application/json
 
-範例: GET /api/expenses/category/餐飲
+{
+  "title": "午餐",
+  "amount": 120.50,
+  "category": "餐飲",
+  "expenseDate": "2025-10-08"
+}
 
-回應: 200 OK
+回應 201 Created
+```
+
+#### 查詢所有支出
+```http
+GET /api/expenses
+Authorization: Bearer {your_token}
+
+回應 200 OK:
 [
   {
     "id": 1,
-    "title": "早餐",
-    "amount": 50.00,
+    "title": "午餐",
+    "amount": 120.50,
     "category": "餐飲",
-    "expenseDate": "2025-09-28"
-  },
-  ...
+    "expenseDate": "2025-10-08"
+  }
 ]
 ```
 
-#### 7. 根據日期範圍查詢支出
+#### 根據分類查詢
 ```http
-GET /api/expenses/date-range?startDate={start}&endDate={end}
+GET /api/expenses/category/{category}
+Authorization: Bearer {your_token}
 
-範例: GET /api/expenses/date-range?startDate=2025-09-01&endDate=2025-09-30
-
-回應: 200 OK
+範例: GET /api/expenses/category/餐飲
 ```
 
-#### 8. 根據分類和日期範圍組合查詢
+#### 根據日期範圍查詢
 ```http
-GET /api/expenses/search?category={cat}&startDate={start}&endDate={end}
-
-範例: GET /api/expenses/search?category=餐飲&startDate=2025-09-01&endDate=2025-09-30
-
-回應: 200 OK
+GET /api/expenses/date-range?startDate=2025-10-01&endDate=2025-10-31
+Authorization: Bearer {your_token}
 ```
 
-#### 9. 取得日期範圍內的所有分類
+#### 組合查詢（分類 + 日期）
 ```http
-GET /api/expenses/categories?startDate={start}&endDate={end}
+GET /api/expenses/search?category=餐飲&startDate=2025-10-01&endDate=2025-10-31
+Authorization: Bearer {your_token}
+```
 
-範例: GET /api/expenses/categories?startDate=2025-09-01&endDate=2025-09-30
+#### 取得所有分類
+```http
+GET /api/expenses/categories?startDate=2025-10-01&endDate=2025-10-31
+Authorization: Bearer {your_token}
 
-回應: 200 OK
-["餐飲", "交通", "娛樂", "購物", "生活用品"]
+回應: ["餐飲", "交通", "娛樂", "購物"]
+```
+
+#### 更新支出
+```http
+PUT /api/expenses/{id}
+Authorization: Bearer {your_token}
+Content-Type: application/json
+
+{
+  "title": "晚餐",
+  "amount": 200.00,
+  "category": "餐飲",
+  "expenseDate": "2025-10-08"
+}
+```
+
+#### 刪除支出
+```http
+DELETE /api/expenses/{id}
+Authorization: Bearer {your_token}
+
+回應 204 No Content
 ```
 
 ---
 
 ## ✅ 資料驗證規則
 
-### 自動驗證
-- **title（標題）**
-    - 不能為空白
-    - 長度必須在 1-100 字元之間
+### User（使用者）
+- **username**: 3-50 字元，必填
+- **email**: 有效的 Email 格式，必填
+- **password**: 至少 8 字元，必填（OAuth 使用者可為空）
+- **name**: 最多 100 字元，必填
 
-- **amount（金額）**
-    - 不能為空
-    - 必須大於 0（不接受負數或零）
-    - 最多 10 位整數，2 位小數
-
-- **category（分類）**
-    - 不能為空白
-    - 長度不能超過 50 字元
-
-- **expenseDate（日期）**
-    - 不能為空
-    - 不能是未來日期
-
-### 驗證錯誤回應
-```json
-{
-  "title": "標題不能為空",
-  "amount": "金額必須大於 0",
-  "expenseDate": "日期不能是未來"
-}
-```
+### Expense（支出）
+- **title**: 1-100 字元，必填
+- **amount**: 大於 0，必填
+- **category**: 最多 50 字元，必填
+- **expenseDate**: 不能是未來日期，必填
 
 ---
 
-## 📖 Swagger API 文件
-專案啟動後可至以下網址檢視互動式 API 文件：
-```
-http://localhost:8080/swagger-ui/index.html
-```
+## 🔒 安全性設計
 
-可以直接在瀏覽器中測試所有 API！
+### JWT Token
+- **有效期**: 1 小時
+- **包含資訊**: username
+- **加密演算法**: HS256
+- **密鑰長度**: 至少 256 位元
+
+### 密碼安全
+- 使用 **BCrypt** 加密
+- 強度: 10 rounds
+- 絕不明文儲存
+
+### OAuth2 安全
+- 使用 Google 官方 OAuth 2.0
+- Token 由 Google 驗證
+- 自動綁定或建立帳號
+
+### API 安全
+- 所有支出 API 需要 JWT 認證
+- 使用者只能存取自己的資料
+- 自動防止 SQL Injection（JPA）
+- CSRF 保護（Stateless API 已禁用）
 
 ---
 
-## 🧪 單元測試
+## 📧 Email 系統
 
-### 測試覆蓋範圍
-- ✅ **基本 CRUD 測試**（6 個測試）
-- ✅ **資料驗證測試**（5 個測試）
-- ✅ **查詢功能測試**（6 個測試）
-- 總計：**17 個測試案例**
+### 測試環境（Mailtrap）
+- 註冊：https://mailtrap.io
+- 不會真的寄信
+- 可以檢視信件內容
 
-### 執行測試
+### Email 類型
+1. **驗證信**
+    - 註冊後自動發送
+    - 有效期 24 小時
+    - 包含驗證連結
+
+2. **密碼重設信**
+    - 使用者請求後發送
+    - 有效期 1 小時
+    - 包含重設連結
+
+---
+
+## 🧪 測試
+
+### 單元測試
 ```bash
 # 執行所有測試
 mvn test
 
-# 執行特定測試類別
+# 執行特定測試
+mvn test -Dtest=AuthControllerTest
 mvn test -Dtest=ExpenseControllerTest
-
-# 查看測試覆蓋率報告
-mvn test jacoco:report
 ```
 
-測試檔案位置：`src/test/java/com/example/expenseapp/ExpenseControllerTest.java`
+### 測試覆蓋率
+- **AuthControllerTest**: 22 個測試
+- **ExpenseControllerTest**: 23 個測試
+- **總計**: 45 個測試案例
+
+### 使用 Swagger 測試
+```
+http://localhost:8080/swagger-ui/index.html
+```
+
+### 使用 Postman 測試
+1. 註冊/登入取得 Token
+2. 在 Authorization 選擇 Bearer Token
+3. 貼上 Token
+4. 測試各種 API
 
 ---
 
-## 📥 初始化資料
-專案啟動時若資料庫無資料，會自動插入 8 筆範例資料：
-
-| 標題 | 金額 | 分類 | 日期 |
-|------|------|------|------|
-| 早餐 - 蛋餅豆漿 | 50.00 | 食物 | 2 天前 |
-| 午餐 - 便當 | 120.00 | 食物 | 昨天 |
-| 晚餐 - 牛肉麵 | 200.00 | 食物 | 今天 |
-| 捷運票 | 35.00 | 交通 | 3 天前 |
-| Uber 計程車 | 250.00 | 交通 | 昨天 |
-| 電影票 | 320.00 | 娛樂 | 5 天前 |
-| 衣服 | 1200.00 | 購物 | 7 天前 |
-| 衛生紙、洗髮精 | 350.00 | 生活用品 | 4 天前 |
+## 📖 Swagger API 文件
+專案啟動後訪問：
+```
+http://localhost:8080/swagger-ui/index.html
+```
 
 ---
 
 ## ▶️ 執行專案
 
-### 1. 確保 MySQL 已啟動
+### 開發環境
 ```bash
-# 檢查 MySQL 服務狀態
-sudo service mysql status
+# 1. 確保 MySQL 已啟動並建立資料庫
 
-# 或使用 Docker
-docker run -d -p 3306:3306 --name mysql \
-  -e MYSQL_ROOT_PASSWORD=123456 \
-  -e MYSQL_DATABASE=expense_db \
-  mysql:8.0
-```
+# 2. 設定 application.properties
 
-### 2. 啟動 Spring Boot 應用
-```bash
-# 使用 Maven
+# 3. 執行專案
 mvn spring-boot:run
 
-# 或先打包成 JAR
-mvn clean package
-java -jar target/expense-app-0.0.1-SNAPSHOT.jar
+# 4. 訪問
+http://localhost:8080/swagger-ui/index.html
+http://localhost:8080/oauth2-test.html
 ```
 
-### 3. 驗證服務運行
+### 打包部署
 ```bash
-# 檢查健康狀態
-curl http://localhost:8080/api/expenses
+# 打包成 JAR
+mvn clean package
 
-# 或開啟 Swagger UI
-open http://localhost:8080/swagger-ui/index.html
+# 執行 JAR
+java -jar target/expense-app-0.0.1-SNAPSHOT.jar
 ```
 
 ---
 
-## 🔧 常用操作範例
+## 🌐 Google OAuth 設定
 
-### 使用 curl 測試 API
+### 1. 建立 Google Cloud 專案
+1. 前往 https://console.cloud.google.com/
+2. 建立新專案：`Expense App`
+3. 啟用 Google+ API
 
-```bash
-# 1. 新增支出
-curl -X POST http://localhost:8080/api/expenses \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "星巴克咖啡",
-    "amount": 150.00,
-    "category": "餐飲",
-    "expenseDate": "2025-09-30"
-  }'
+### 2. 建立 OAuth 憑證
+1. API 和服務 → 憑證
+2. 建立憑證 → OAuth 用戶端 ID
+3. 應用程式類型：網頁應用程式
+4. 已授權的重新導向 URI：
+   ```
+   http://localhost:8080/login/oauth2/code/google
+   ```
+5. 複製 Client ID 和 Client Secret
+6. 填入 `application.properties`
 
-# 2. 查詢所有支出
-curl http://localhost:8080/api/expenses
-
-# 3. 查詢特定分類
-curl http://localhost:8080/api/expenses/category/餐飲
-
-# 4. 查詢日期範圍
-curl "http://localhost:8080/api/expenses/date-range?startDate=2025-09-01&endDate=2025-09-30"
-
-# 5. 更新支出
-curl -X PUT http://localhost:8080/api/expenses/1 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "修改後的標題",
-    "amount": 200.00,
-    "category": "餐飲",
-    "expenseDate": "2025-09-30"
-  }'
-
-# 6. 刪除支出
-curl -X DELETE http://localhost:8080/api/expenses/1
+### 3. 測試 OAuth
+訪問：
 ```
+http://localhost:8080/oauth2-test.html
+```
+
+點擊「使用 Google 登入」按鈕
+
+---
+
+## 🔧 常用操作
+
+### 查看所有使用者
+```sql
+SELECT id, username, email, provider, status FROM users;
+```
+
+### 查看 Google 使用者
+```sql
+SELECT * FROM users WHERE provider = 'google';
+```
+
+### 查看使用者的支出統計
+```sql
+SELECT 
+    u.username,
+    COUNT(e.id) AS expense_count,
+    SUM(e.amount) AS total_amount
+FROM users u
+LEFT JOIN expenses e ON u.id = e.user_id
+GROUP BY u.id;
+```
+
+### 清理過期 Token
+```sql
+DELETE FROM verification_tokens 
+WHERE expires_at < NOW() AND used_at IS NULL;
+```
+
+---
+
+## 📊 資料庫架構
+
+### users 資料表
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| id | BIGINT | 主鍵 |
+| username | VARCHAR(50) | 使用者帳號 |
+| email | VARCHAR(255) | Email |
+| password | VARCHAR(255) | 密碼（可為 NULL） |
+| name | VARCHAR(100) | 姓名 |
+| status | VARCHAR(20) | 狀態 |
+| google_id | VARCHAR(255) | Google ID |
+| provider | VARCHAR(20) | 註冊方式 |
+| avatar_url | VARCHAR(500) | 頭像 |
+| created_at | TIMESTAMP | 建立時間 |
+| updated_at | TIMESTAMP | 更新時間 |
+| last_login_at | TIMESTAMP | 最後登入 |
+
+### expenses 資料表
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| id | BIGINT | 主鍵 |
+| user_id | BIGINT | 使用者 ID（外鍵） |
+| title | VARCHAR(100) | 標題 |
+| amount | DECIMAL(12,2) | 金額 |
+| category | VARCHAR(50) | 分類 |
+| expense_date | DATE | 日期 |
+| created_at | TIMESTAMP | 建立時間 |
+| updated_at | TIMESTAMP | 更新時間 |
+
+---
+
+## 🆘 常見問題
+
+### Q1: 無法啟動應用 - 找不到環境變數
+**錯誤訊息**：`Could not resolve placeholder 'DB_PASSWORD' in value "${DB_PASSWORD}"`
+
+**解決方法**：
+1. 確認專案根目錄有 `.env` 文件
+2. 檢查 `.env` 文件內容是否正確
+3. 確認環境變數名稱拼寫正確（區分大小寫）
+4. 重新啟動應用
+
+### Q2: 測試失敗 - 環境變數未載入
+**問題**：執行 `mvn test` 或 `mvn package` 時測試失敗
+
+**解決方法**：
+1. 確認測試類已加入 `@ContextConfiguration(initializers = DotenvTestConfig.class)`
+2. 檢查 `DotenvTestConfig.java` 是否存在於 `src/test/java/config/` 目錄
+3. 確認 `.env` 文件存在且格式正確
+
+### Q3: 無法啟動應用 - MySQL 連線失敗
+- 檢查 MySQL 是否啟動
+- 檢查 `.env` 中的資料庫設定
+- 確認資料庫 `expense_db` 已建立
+- 檢查 8080 port 是否被佔用
+
+### Q4: 登入失敗
+- 檢查帳號是否已驗證 Email
+- 檢查密碼是否正確
+- 查看 logs 錯誤訊息
+
+### Q3: Google 登入失敗
+- 檢查 Client ID 和 Secret 是否正確
+- 檢查 redirect URI 是否匹配
+- 檢查 Google+ API 是否啟用
+
+### Q4: Email 收不到
+- 檢查 Mailtrap 設定
+- 登入 Mailtrap 查看 Inbox
+- 檢查 application.properties 的 SMTP 設定
+
+### Q5: JWT Token 無效
+- Token 可能已過期（1 小時）
+- 檢查 jwt.secret 是否正確
+- 重新登入取得新 Token
 
 ---
 
 ## 🚀 效能優化
 
 ### 資料庫索引
-專案已建立以下索引以提升查詢效能：
-- `idx_category` - 分類查詢
-- `idx_expense_date` - 日期查詢
-- `idx_category_date` - 組合查詢（最常用）
+已建立以下索引：
+- users: username, email, google_id, provider
+- expenses: user_id, category, expense_date
+- 組合索引: (user_id, expense_date), (user_id, category)
 
-### JPA 查詢優化
-- 使用 `@Query` 自訂查詢語句
-- 避免 N+1 查詢問題
-- 關閉 `open-in-view` 模式
+### JPA 設定
+- `open-in-view=false` - 避免 Lazy Loading 問題
+- 使用 `@Transactional` - 明確的交易邊界
 
 ---
 
-## 📌 注意事項
+## 📝 注意事項
 
 ### 開發環境
-- 確保 MySQL 已啟動，且有 `expense_db` 資料庫
-- 預設帳號/密碼：`root / 123456`
-- 可於 `application.properties` 調整設定
+- **使用 .env 管理環境變數**：所有敏感資訊（MySQL 密碼、JWT Secret、SMTP 密碼等）都存放在 `.env` 文件中
+- **不要提交 .env 到 Git**：`.env` 已加入 `.gitignore`，確保敏感資訊不會被上傳
+- **提供 .env.example 作為範本**：團隊成員可以複製此範例並填入自己的設定
+- **使用 dotenv-java 自動載入**：應用啟動和測試時會自動讀取環境變數
 
 ### 生產環境
-- **必須修改** `spring.jpa.hibernate.ddl-auto` 為 `validate` 或 `none`
-- **必須關閉** Swagger UI (`springdoc.swagger-ui.enabled=false`)
-- **建議使用** 環境變數管理敏感資訊（資料庫密碼）
-- **建議使用** Flyway 或 Liquibase 管理資料庫遷移
-
-### 安全性
-- 不要將資料庫密碼提交到版本控制
-- 建議使用環境變數或 Spring Profiles
-- 生產環境應使用 HTTPS
-- 考慮加入 API 認證機制（JWT）
-
----
-
-## 🔄 未來改進計畫
-
-### 第二階段功能
-- [ ] 使用者註冊/登入系統
-- [ ] JWT 身份驗證
-- [ ] 支出統計 API（月度報表、分類統計）
-- [ ] 分頁功能
-
-### 第三階段優化
-- [ ] 整合 Flyway 資料庫版本控制
-- [ ] Docker 容器化部署
-- [ ] CI/CD 自動化部署
-- [ ] 監控與日誌系統
+- 設定 `spring.jpa.hibernate.ddl-auto=validate`
+- 關閉 Swagger UI
+- 使用環境變數管理敏感資訊
+- 啟用 HTTPS
+- 設定適當的 CORS 規則
+- 考慮使用 Flyway 管理資料庫遷移
 
 ---
 
@@ -452,4 +648,24 @@ curl -X DELETE http://localhost:8080/api/expenses/1
 
 ---
 
-**最後更新日期：** 2025-10-01
+---
+
+## 🔄 更新日誌
+
+### v1.0.1 (2025-10-09)
+- ✅ 新增 dotenv-java 支援，使用 .env 文件管理環境變數
+- ✅ 新增 DotenvTestConfig 確保測試環境正確載入環境變數
+- ✅ 更新文件說明環境變數設定方式
+- ✅ 提供 .env.example 範例文件
+
+### v1.0.0 (2025-10-08)
+- ✅ 完成使用者認證系統（註冊、登入、Email 驗證、忘記密碼）
+- ✅ 完成 Google OAuth 2.0 登入
+- ✅ 完成支出管理 CRUD 功能
+- ✅ 完成分類查詢、日期範圍查詢
+- ✅ 完成 45 個單元測試
+
+---
+
+**最後更新日期：** 2025-10-09
+**版本：** 1.0.1

@@ -23,9 +23,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         User user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("找不到使用者：" + usernameOrEmail));
 
+        // 處理 OAuth 使用者（沒有密碼）
+        String password = user.getPassword() != null && !user.getPassword().isEmpty()
+                ? user.getPassword()
+                : "";
+
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
-                user.getPassword(),
+                password,
                 new ArrayList<>()
         );
     }

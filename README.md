@@ -1,118 +1,214 @@
 # 💰 Expense App Backend
 
-> 一個功能完整的支出管理系統，基於 Spring Boot 3 + MySQL 開發
+> 一個功能完整的支出管理系統，支援傳統註冊與 Google OAuth 登入
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://www.oracle.com/java/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Spring Security](https://img.shields.io/badge/Spring%20Security-6.4.5-green.svg)](https://spring.io/projects/spring-security)
 [![MySQL](https://img.shields.io/badge/MySQL-8.x-blue.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-## ✨ 特色功能
+## ✨ 核心功能
 
-- 🔥 **完整 CRUD API** - 新增、查詢、更新、刪除支出紀錄
-- 🔍 **智慧查詢** - 支援分類查詢、日期範圍查詢、組合查詢
-- ✅ **資料驗證** - 自動驗證金額、日期、必填欄位
-- 📊 **分類管理** - 靈活的支出分類系統
-- 📖 **Swagger 文件** - 互動式 API 文件，即測即用
-- 🧪 **完整測試** - 17 個單元測試案例，涵蓋所有功能
-- 🚀 **開箱即用** - 自動初始化範例資料
+### 🔐 使用者認證
+- 📝 **傳統註冊登入** - 支援帳號密碼註冊，Email 驗證
+- 🔑 **Google OAuth 2.0** - 一鍵使用 Google 帳號登入
+- 🎫 **JWT Token** - 統一的身份驗證機制
+- 📧 **Email 驗證** - 註冊後需驗證 Email
+- 🔄 **忘記密碼** - 透過 Email 重設密碼
+
+### 💸 支出管理
+- ➕ **新增支出** - 記錄每筆支出
+- 📊 **分類管理** - 靈活的支出分類
+- 🔍 **智慧查詢** - 支援分類、日期範圍、組合查詢
+- ✏️ **編輯刪除** - 完整的 CRUD 操作
+- 🔒 **資料隔離** - 使用者只能存取自己的資料
+
+### 🛡️ 安全性
+- ✅ **JWT 認證** - 無狀態的 API 認證
+- ✅ **BCrypt 加密** - 密碼安全加密
+- ✅ **資料驗證** - 自動驗證所有輸入
+- ✅ **使用者隔離** - 嚴格的資料存取控制
+- ✅ **防 SQL Injection** - JPA 自動防護
+
+### 📖 開發者友善
+- 🚀 **Swagger UI** - 互動式 API 文件
+- 🧪 **完整測試** - 45 個單元測試
+- 📝 **詳細文件** - 完整的技術文件
 
 ---
 
 ## 🛠️ 技術棧
 
-| 技術 | 版本 | 說明 |
+| 技術 | 版本 | 用途 |
 |------|------|------|
 | Java | 21 | 程式語言 |
 | Spring Boot | 3.4.5 | 應用框架 |
-| Spring Data JPA | - | ORM 框架 |
+| Spring Security | 6.4.5 | 安全認證 |
+| Spring Data JPA | 3.4.5 | 資料持久化 |
+| OAuth2 Client | 6.4.5 | Google 登入 |
 | MySQL | 8.x | 資料庫 |
-| Hibernate Validator | 8.0.1 | 資料驗證 |
-| Swagger/OpenAPI | 2.2.0 | API 文件 |
+| JWT (jjwt) | 0.11.5 | Token 管理 |
+| dotenv-java | 3.0.0 | 環境變數管理 |
+| JavaMail | - | Email 發送 |
+| Swagger | 2.2.0 | API 文件 |
 | JUnit 5 | - | 單元測試 |
 
 ---
 
 ## 🚀 快速開始
 
-### 1. 前置需求
-- Java 21+
-- Maven 3.6+
-- MySQL 8.0+
+### 前置需求
+- ☕ Java 21+
+- 📦 Maven 3.6+
+- 🐬 MySQL 8.0+
+- 📧 Mailtrap 帳號（測試用）
+- 🔐 Google Cloud 專案（OAuth 用）
+
+### 1. Clone 專案
+```bash
+git clone https://github.com/yourusername/expense-app-backend.git
+cd expense-app-backend
+```
 
 ### 2. 建立資料庫
+```bash
+mysql -u root -p
+```
+
 ```sql
 CREATE DATABASE expense_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-### 3. 設定資料庫連線
-修改 `src/main/resources/application.properties`：
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/expense_db
-spring.datasource.username=root
-spring.datasource.password=你的密碼
+執行建表 SQL（位於專案根目錄）
+
+### 3. 設定環境變數
+本專案使用 `.env` 文件管理環境變數，更安全且易於管理。
+
+```bash
+# 複製環境變數範例檔
+cp .env.example .env
+
+# 編輯 .env 檔案，填入真實資訊
+notepad .env     # Windows
+nano .env        # Linux/Mac
 ```
+
+**必填項目：**
+- `DB_PASSWORD` - MySQL 密碼
+- `JWT_SECRET` - JWT 密鑰（至少 256 位元）
+- `MAIL_USERNAME` & `MAIL_PASSWORD` - Mailtrap SMTP 帳密
+- `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET` - Google OAuth 憑證
+
+**`.env` 檔案範例：**
+```properties
+# 資料庫設定
+DB_URL=jdbc:mysql://localhost:3306/expense_db
+DB_USERNAME=root
+DB_PASSWORD=你的MySQL密碼
+
+# JWT 設定
+JWT_SECRET=你的256位元密鑰
+JWT_EXPIRATION=3600000
+
+# Email 設定（Mailtrap）
+MAIL_HOST=smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=你的Mailtrap帳號
+MAIL_PASSWORD=你的Mailtrap密碼
+
+# Google OAuth
+GOOGLE_CLIENT_ID=你的Google_Client_ID
+GOOGLE_CLIENT_SECRET=你的Google_Client_Secret
+```
+
+> **注意**：`.env` 文件已加入 `.gitignore`，不會被提交到版本控制系統
 
 ### 4. 啟動應用
 ```bash
-# 方式 1: 使用 Maven
 mvn spring-boot:run
-
-# 方式 2: 打包後執行
-mvn clean package
-java -jar target/expense-app-0.0.1-SNAPSHOT.jar
 ```
 
 ### 5. 驗證運行
 開啟瀏覽器訪問：
-- **API 文件**：http://localhost:8080/swagger-ui/index.html
-- **測試 API**：http://localhost:8080/api/expenses
+- **Swagger UI**：http://localhost:8080/swagger-ui/index.html
+- **OAuth 測試**：http://localhost:8080/oauth2-test.html
 
 ---
 
 ## 📑 API 快速指南
 
-### 基本操作
+### 🔐 認證 API
 
+#### 註冊
 ```bash
-# 查詢所有支出
-GET http://localhost:8080/api/expenses
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
 
-# 新增支出
+{
+  "username": "john_doe",
+  "email": "john@example.com",
+  "password": "password123",
+  "name": "John Doe"
+}
+```
+
+#### 登入
+```bash
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "john_doe",
+  "password": "password123"
+}
+
+# 返回 JWT Token
+```
+
+#### Google 登入
+```bash
+# 瀏覽器訪問
+GET http://localhost:8080/oauth2/authorization/google
+```
+
+### 💸 支出 API
+
+**所有支出 API 需要在 Header 加入 JWT Token：**
+```
+Authorization: Bearer {your_token}
+```
+
+#### 新增支出
+```bash
 POST http://localhost:8080/api/expenses
+Authorization: Bearer {token}
+Content-Type: application/json
+
 {
   "title": "午餐",
   "amount": 120.00,
   "category": "餐飲",
-  "expenseDate": "2025-09-30"
+  "expenseDate": "2025-10-08"
 }
-
-# 更新支出
-PUT http://localhost:8080/api/expenses/{id}
-
-# 刪除支出
-DELETE http://localhost:8080/api/expenses/{id}
 ```
 
-### 查詢功能
-
+#### 查詢支出
 ```bash
-# 根據分類查詢
+# 查詢所有
+GET /api/expenses
+
+# 根據分類
 GET /api/expenses/category/餐飲
 
-# 根據日期範圍查詢
-GET /api/expenses/date-range?startDate=2025-09-01&endDate=2025-09-30
+# 根據日期
+GET /api/expenses/date-range?startDate=2025-10-01&endDate=2025-10-31
 
-# 組合查詢（分類 + 日期）
-GET /api/expenses/search?category=餐飲&startDate=2025-09-01&endDate=2025-09-30
-
-# 取得所有分類
-GET /api/expenses/categories?startDate=2025-09-01&endDate=2025-09-30
+# 組合查詢
+GET /api/expenses/search?category=餐飲&startDate=2025-10-01&endDate=2025-10-31
 ```
-
-**💡 提示：** 推薦使用 [Swagger UI](http://localhost:8080/swagger-ui/index.html) 進行 API 測試！
 
 ---
 
@@ -123,16 +219,59 @@ GET /api/expenses/categories?startDate=2025-09-01&endDate=2025-09-30
 mvn test
 
 # 執行特定測試
+mvn test -Dtest=AuthControllerTest
 mvn test -Dtest=ExpenseControllerTest
 
-# 生成測試報告
+# 產生測試覆蓋率報告
 mvn test jacoco:report
 ```
 
 **測試覆蓋：**
-- ✅ 基本 CRUD 操作（6 個測試）
-- ✅ 資料驗證規則（5 個測試）
-- ✅ 查詢功能（6 個測試）
+- ✅ 認證功能測試（22 個）
+- ✅ 支出管理測試（23 個）
+- ✅ 總計 45 個測試案例
+
+---
+
+## 📊 資料模型
+
+### User（使用者）
+- `username` - 使用者帳號
+- `email` - Email
+- `password` - 密碼（OAuth 使用者可為空）
+- `name` - 姓名
+- `provider` - 註冊方式（local / google）
+- `google_id` - Google 使用者 ID
+- `status` - 狀態（UNVERIFIED / ACTIVE / SUSPENDED）
+
+### Expense（支出）
+- `title` - 標題
+- `amount` - 金額
+- `category` - 分類
+- `expense_date` - 日期
+- `user_id` - 所屬使用者（外鍵）
+
+---
+
+## 🌐 Google OAuth 設定
+
+### 1. 建立 Google Cloud 專案
+1. 前往 [Google Cloud Console](https://console.cloud.google.com/)
+2. 建立新專案
+3. 啟用 Google+ API
+
+### 2. 建立 OAuth 憑證
+1. 憑證 → 建立憑證 → OAuth 用戶端 ID
+2. 應用程式類型：**網頁應用程式**
+3. 已授權的重新導向 URI：
+   ```
+   http://localhost:8080/login/oauth2/code/google
+   ```
+4. 複製 Client ID 和 Client Secret
+5. 貼到 `application.properties`
+
+### 3. 測試 OAuth
+訪問：http://localhost:8080/oauth2-test.html
 
 ---
 
@@ -141,75 +280,70 @@ mvn test jacoco:report
 ```
 expense-app/
 ├── src/main/java/com/example/expenseapp
-│   ├── controller/          # REST API 控制器
-│   ├── model/               # 實體模型
-│   ├── repository/          # 資料存取層
-│   ├── service/             # 業務邏輯層
-│   └── initializer/         # 資料初始化
-├── src/test/java/           # 單元測試
-├── src/main/resources/      # 設定檔
-├── DOCUMENTATION.md         # 完整文件
-└── README.md               # 本文件
+│   ├── controller/              # REST API 端點
+│   ├── model/                   # 資料模型
+│   ├── repository/              # 資料存取層
+│   ├── service/                 # 業務邏輯層
+│   ├── security/                # 安全認證
+│   ├── dto/                     # 資料傳輸物件
+│   └── exception/               # 例外處理
+├── src/main/resources/
+│   ├── static/                  # 靜態資源
+│   └── application.properties   # Spring Boot 設定
+├── src/test/java/
+│   ├── controller/              # Controller 測試
+│   └── config/
+│       └── DotenvTestConfig.java # 測試環境變數配置
+├── .env                         # 環境變數（不提交）
+├── .env.example                 # 環境變數範例
+├── pom.xml                      # Maven 設定
+├── DOCUMENTATION.md             # 詳細文件
+└── README.md                    # 本文件
 ```
-
----
-
-## 📊 資料模型
-
-| 欄位 | 類型 | 必填 | 說明 |
-|------|------|------|------|
-| id | Long | 自動 | 主鍵 |
-| title | String | ✅ | 支出標題（1-100 字元）|
-| amount | BigDecimal | ✅ | 支出金額（必須 > 0）|
-| category | String | ✅ | 支出分類（最多 50 字元）|
-| expenseDate | LocalDate | ✅ | 支出日期（不能是未來）|
-
----
-
-## 🎯 預設範例資料
-
-應用啟動時會自動建立 8 筆範例資料：
-
-| 分類 | 筆數 | 範例 |
-|------|------|------|
-| 食物 | 3 | 早餐、午餐、晚餐 |
-| 交通 | 2 | 捷運票、Uber |
-| 娛樂 | 1 | 電影票 |
-| 購物 | 1 | 衣服 |
-| 生活用品 | 1 | 衛生紙、洗髮精 |
 
 ---
 
 ## 🔧 設定說明
 
-### 開發環境 (`application.properties`)
+### 環境變數管理
+本專案使用 **dotenv-java** 管理環境變數，提供以下優勢：
+- ✅ 敏感資訊不會被提交到 Git
+- ✅ 開發和生產環境配置分離
+- ✅ 團隊協作時配置更簡單
+- ✅ 符合 [12-Factor App](https://12factor.net/) 原則
+
+### 開發環境設定
+1. 複製 `.env.example` 為 `.env`
+2. 填入真實的環境變數值
+3. Spring Boot 會自動從 `.env` 載入配置
+
+### application.properties
+`application.properties` 使用環境變數占位符：
 ```properties
 # 資料庫設定
-spring.datasource.url=jdbc:mysql://localhost:3306/expense_db
-spring.datasource.username=root
-spring.datasource.password=123456
-
-# JPA 設定
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-
-# Swagger 啟用
-springdoc.swagger-ui.enabled=true
-```
-
-### 生產環境 (`application-prod.properties`)
-```properties
-# 使用環境變數
 spring.datasource.url=${DB_URL}
 spring.datasource.username=${DB_USERNAME}
 spring.datasource.password=${DB_PASSWORD}
 
-# 生產設定
-spring.jpa.hibernate.ddl-auto=validate
-spring.jpa.show-sql=false
+# JWT 設定
+jwt.secret=${JWT_SECRET}
+jwt.expiration=${JWT_EXPIRATION}
 
-# 關閉 Swagger
-springdoc.swagger-ui.enabled=false
+# Email 設定
+spring.mail.host=${MAIL_HOST}
+spring.mail.username=${MAIL_USERNAME}
+spring.mail.password=${MAIL_PASSWORD}
+```
+
+### 生產環境部署
+生產環境建議使用系統環境變數或容器配置（如 Docker、Kubernetes）：
+```bash
+# 設置環境變數
+export DB_PASSWORD=your_password
+export JWT_SECRET=your_secret
+
+# 啟動應用
+java -jar expense-app.jar
 ```
 
 ---
@@ -219,51 +353,41 @@ springdoc.swagger-ui.enabled=false
 想了解更多？請查看 [DOCUMENTATION.md](DOCUMENTATION.md)，內含：
 - 完整 API 文件
 - 資料庫設計說明
+- 安全性詳解
 - 部署指南
-- 效能優化建議
 - 常見問題解答
-
----
-
-## 🚀 部署選項
-
-### Docker 部署
-```bash
-# 即將推出 Docker Compose 設定
-docker-compose up -d
-```
-
-### 雲端平台
-- ☁️ Render
-- ☁️ Railway
-- ☁️ Heroku
-- ☁️ AWS EC2
-
-詳細部署指南請參考 [DOCUMENTATION.md](DOCUMENTATION.md)
 
 ---
 
 ## 🗺️ 開發路線圖
 
 ### ✅ 已完成（v1.0）
-- [x] 基本 CRUD API
-- [x] 資料驗證
+- [x] 使用者註冊/登入
+- [x] Email 驗證
+- [x] 忘記密碼
+- [x] Google OAuth 登入
+- [x] JWT 認證
+- [x] 支出 CRUD
 - [x] 分類查詢
 - [x] 日期範圍查詢
 - [x] Swagger 文件
-- [x] 單元測試
+- [x] 單元測試（45 個）
 
 ### 🔜 計劃中（v2.0）
-- [ ] 使用者認證系統（JWT）
 - [ ] 支出統計 API
+- [ ] 月度/年度報表
+- [ ] 資料匯出（CSV/Excel）
 - [ ] 資料分頁
-- [ ] 匯出功能（CSV/Excel）
+- [ ] 預算管理
+- [ ] 支出分析圖表
 
 ### 💡 未來構想（v3.0）
 - [ ] 前端介面（React/Vue）
-- [ ] 預算管理
 - [ ] 多幣別支援
-- [ ] 圖表視覺化
+- [ ] 共享帳本（多人協作）
+- [ ] 行動 App
+- [ ] 定期支出提醒
+- [ ] AI 支出建議
 
 ---
 
@@ -271,11 +395,29 @@ docker-compose up -d
 
 歡迎提交 Issue 和 Pull Request！
 
+### 開發流程
 1. Fork 本專案
 2. 建立特性分支 (`git checkout -b feature/AmazingFeature`)
 3. 提交變更 (`git commit -m 'Add some AmazingFeature'`)
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 開啟 Pull Request
+
+### Commit 規範
+- `feat`: 新功能
+- `fix`: 修正錯誤
+- `docs`: 文件更新
+- `test`: 測試相關
+- `refactor`: 重構程式碼
+
+---
+
+## 🐛 問題回報
+
+遇到問題？請到 [Issues](https://github.com/yourusername/expense-app-backend/issues) 回報，並提供：
+- 問題描述
+- 錯誤訊息
+- 重現步驟
+- 環境資訊（OS、Java 版本等）
 
 ---
 
@@ -285,25 +427,29 @@ docker-compose up -d
 
 ---
 
-## 📧 聯絡方式
+## 🌟 致謝
 
-- **專案連結**：[GitHub Repository](#)
-- **問題回報**：[Issues](#)
-- **開發者**：您的名字
+感謝以下技術和社群：
+- Spring Boot 團隊
+- Google OAuth 文件
+- 所有貢獻者
 
 ---
 
-## 🌟 致謝
+## 📧 聯絡方式
 
-- Spring Boot 社群
-- 所有貢獻者
+- **專案連結**：[GitHub Repository](https://github.com/yourusername/expense-app-backend)
+- **問題回報**：[Issues](https://github.com/yourusername/expense-app-backend/issues)
+- **開發者**：您的名字
 
 ---
 
 <div align="center">
 
-**⭐ 如果這個專案對你有幫助，請給我一個星星！**
+### ⭐ 如果這個專案對你有幫助，請給我一個星星！
 
-Made with ❤️ by [Your Name]
+**Made with ❤️ by [Your Name]**
+
+[⬆ 回到頂部](#-expense-app-backend)
 
 </div>

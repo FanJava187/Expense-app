@@ -1,0 +1,28 @@
+# 環境變數文件（包含敏感資訊）
+.env
+
+# Maven 編譯輸出
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# IDE 配置
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# 日誌文件
+*.log
+
+# 作業系統文件
+.DS_Store
+Thumbs.db
+
+# Spring Boot
+*.pid
+spring-boot-devtools.properties
