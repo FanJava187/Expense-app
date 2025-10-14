@@ -6,6 +6,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,10 +33,31 @@ public class ExpenseController {
         this.expenseService = expenseService;
     }
 
-    @Operation(summary = "取得所有支出紀錄")
+    @Operation(summary = "取得所有支出紀錄（支援分頁）",
+               description = "查詢當前使用者的所有支出紀錄，支援分頁和排序")
     @GetMapping
-    public List<Expense> getAllExpenses() {
-        return expenseService.getAllExpenses();
+    public ResponseEntity<Page<Expense>> getAllExpenses(
+            @Parameter(description = "頁碼（從 0 開始）", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "每頁筆數", example = "20")
+            @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "排序欄位", example = "expenseDate")
+            @RequestParam(defaultValue = "expenseDate") String sortBy,
+            @Parameter(description = "排序方向（asc 或 desc）", example = "desc")
+            @RequestParam(defaultValue = "desc") String sortDirection) {
+
+        // 建立排序物件
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("asc")
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+        Sort sort = Sort.by(direction, sortBy);
+
+        // 建立分頁物件
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // 查詢資料
+        Page<Expense> expenses = expenseService.getAllExpenses(pageable);
+        return ResponseEntity.ok(expenses);
     }
 
     @Operation(summary = "依 ID 查詢支出紀錄")

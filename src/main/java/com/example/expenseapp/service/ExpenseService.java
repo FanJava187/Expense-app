@@ -6,6 +6,8 @@ import com.example.expenseapp.model.User;
 import com.example.expenseapp.repository.ExpenseRepository;
 import com.example.expenseapp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,12 @@ public class ExpenseService {
     public List<Expense> getAllExpenses() {
         User user = getCurrentUser();
         return expenseRepository.findByUserOrderByExpenseDateDesc(user);
+    }
+
+    // 分頁查詢所有支出
+    public Page<Expense> getAllExpenses(Pageable pageable) {
+        User user = getCurrentUser();
+        return expenseRepository.findByUser(user, pageable);
     }
 
     public Expense getExpenseById(Long id) {
@@ -71,9 +79,21 @@ public class ExpenseService {
         return expenseRepository.findByUserAndCategory(user, category);
     }
 
+    // 分頁查詢指定分類的支出
+    public Page<Expense> getExpensesByCategory(String category, Pageable pageable) {
+        User user = getCurrentUser();
+        return expenseRepository.findByUserAndCategory(user, category, pageable);
+    }
+
     public List<Expense> getExpensesByDateRange(LocalDate startDate, LocalDate endDate) {
         User user = getCurrentUser();
         return expenseRepository.findByUserAndExpenseDateBetween(user, startDate, endDate);
+    }
+
+    // 分頁查詢日期範圍內的支出
+    public Page<Expense> getExpensesByDateRange(LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        User user = getCurrentUser();
+        return expenseRepository.findByUserAndExpenseDateBetween(user, startDate, endDate, pageable);
     }
 
     public List<Expense> getExpensesByCategoryAndDateRange(String category, LocalDate startDate, LocalDate endDate) {

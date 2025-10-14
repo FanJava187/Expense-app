@@ -35,8 +35,9 @@
 
 ### 📖 開發者友善
 - 🚀 **Swagger UI** - 互動式 API 文件
-- 🧪 **完整測試** - 45 個單元測試
+- 🧪 **完整測試** - 51 個單元測試
 - 📝 **詳細文件** - 完整的技術文件
+- 📄 **分頁支援** - 高效能資料查詢
 
 ---
 
@@ -197,8 +198,9 @@ Content-Type: application/json
 
 #### 查詢支出
 ```bash
-# 查詢所有
+# 查詢所有（支援分頁）
 GET /api/expenses
+GET /api/expenses?page=0&size=20&sortBy=expenseDate&sortDirection=desc
 
 # 根據分類
 GET /api/expenses/category/餐飲
@@ -208,6 +210,25 @@ GET /api/expenses/date-range?startDate=2025-10-01&endDate=2025-10-31
 
 # 組合查詢
 GET /api/expenses/search?category=餐飲&startDate=2025-10-01&endDate=2025-10-31
+```
+
+**分頁參數說明：**
+- `page` - 頁碼（從 0 開始，預設 0）
+- `size` - 每頁筆數（預設 20）
+- `sortBy` - 排序欄位（預設 expenseDate）
+- `sortDirection` - 排序方向：asc（升序）或 desc（降序，預設）
+
+**分頁回應格式：**
+```json
+{
+  "content": [...],           // 當前頁的資料
+  "totalElements": 100,       // 總筆數
+  "totalPages": 5,            // 總頁數
+  "size": 20,                 // 每頁筆數
+  "number": 0,                // 當前頁碼
+  "first": true,              // 是否第一頁
+  "last": false               // 是否最後一頁
+}
 ```
 
 ---
@@ -228,8 +249,8 @@ mvn test jacoco:report
 
 **測試覆蓋：**
 - ✅ 認證功能測試（22 個）
-- ✅ 支出管理測試（23 個）
-- ✅ 總計 45 個測試案例
+- ✅ 支出管理測試（29 個，含 6 個分頁測試）
+- ✅ 總計 51 個測試案例
 
 ---
 
@@ -371,13 +392,17 @@ java -jar expense-app.jar
 - [x] 分類查詢
 - [x] 日期範圍查詢
 - [x] Swagger 文件
-- [x] 單元測試（45 個）
+- [x] 單元測試（51 個）
+
+### ✅ 已完成（v1.1）
+- [x] 支出資料分頁查詢
+- [x] 靈活的排序功能
+- [x] 分頁測試覆蓋
 
 ### 🔜 計劃中（v2.0）
 - [ ] 支出統計 API
 - [ ] 月度/年度報表
 - [ ] 資料匯出（CSV/Excel）
-- [ ] 資料分頁
 - [ ] 預算管理
 - [ ] 支出分析圖表
 

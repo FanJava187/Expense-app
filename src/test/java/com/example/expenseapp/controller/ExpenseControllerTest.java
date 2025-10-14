@@ -250,6 +250,123 @@ class ExpenseControllerTest {
     // ========== 查詢功能測試 ==========
 
     @Test
+    @DisplayName("測試分頁查詢 - 基本功能")
+    void testPagination_Basic() throws Exception {
+        // 建立 25 筆測試資料
+        for (int i = 1; i <= 25; i++) {
+            expenseRepository.save(new Expense(testUser, "支出" + i,
+                    BigDecimal.valueOf(i * 10), "測試", LocalDate.now().minusDays(i)));
+        }
+
+        // 查詢第一頁（預設 20 筆）
+        mockMvc.perform(get("/api/expenses")
+                        .header("Authorization", "Bearer " + token)
+                        .param("page", "0")
+                        .param("size", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(20)))
+                .andExpect(jsonPath("$.totalElements").value(25))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.number").value(0))
+                .andExpect(jsonPath("$.first").value(true))
+                .andExpect(jsonPath("$.last").value(false));
+    }
+
+    @Test
+    @DisplayName("測試分頁查詢 - 第二頁")
+    void testPagination_SecondPage() throws Exception {
+        // 建立 25 筆測試資料
+        for (int i = 1; i <= 25; i++) {
+            expenseRepository.save(new Expense(testUser, "支出" + i,
+                    BigDecimal.valueOf(i * 10), "測試", LocalDate.now()));
+        }
+
+        // 查詢第二頁
+        mockMvc.perform(get("/api/expenses")
+                        .header("Authorization", "Bearer " + token)
+                        .param("page", "1")
+                        .param("size", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(5)))
+                .andExpect(jsonPath("$.totalElements").value(25))
+                .andExpect(jsonPath("$.number").value(1))
+                .andExpect(jsonPath("$.first").value(false))
+                .andExpect(jsonPath("$.last").value(true));
+    }
+
+    @Test
+    @DisplayName("測試分頁查詢 - 自訂每頁筆數")
+    void testPagination_CustomPageSize() throws Exception {
+        // 建立 15 筆測試資料
+        for (int i = 1; i <= 15; i++) {
+            expenseRepository.save(new Expense(testUser, "支出" + i,
+                    BigDecimal.valueOf(i * 10), "測試", LocalDate.now()));
+        }
+
+        // 每頁 5 筆
+        mockMvc.perform(get("/api/expenses")
+                        .header("Authorization", "Bearer " + token)
+                        .param("page", "0")
+                        .param("size", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(5)))
+                .andExpect(jsonPath("$.totalElements").value(15))
+                .andExpect(jsonPath("$.totalPages").value(3));
+    }
+
+    @Test
+    @DisplayName("測試分頁查詢 - 排序（升序）")
+    void testPagination_SortAscending() throws Exception {
+        // 建立測試資料（不同日期）
+        expenseRepository.save(new Expense(testUser, "最舊", BigDecimal.valueOf(100), "測試", LocalDate.now().minusDays(5)));
+        expenseRepository.save(new Expense(testUser, "中間", BigDecimal.valueOf(200), "測試", LocalDate.now().minusDays(2)));
+        expenseRepository.save(new Expense(testUser, "最新", BigDecimal.valueOf(300), "測試", LocalDate.now()));
+
+        // 按日期升序排列
+        mockMvc.perform(get("/api/expenses")
+                        .header("Authorization", "Bearer " + token)
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sortBy", "expenseDate")
+                        .param("sortDirection", "asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].title").value("最舊"))
+                .andExpect(jsonPath("$.content[2].title").value("最新"));
+    }
+
+    @Test
+    @DisplayName("測試分頁查詢 - 排序（降序）")
+    void testPagination_SortDescending() throws Exception {
+        // 建立測試資料
+        expenseRepository.save(new Expense(testUser, "最舊", BigDecimal.valueOf(100), "測試", LocalDate.now().minusDays(5)));
+        expenseRepository.save(new Expense(testUser, "中間", BigDecimal.valueOf(200), "測試", LocalDate.now().minusDays(2)));
+        expenseRepository.save(new Expense(testUser, "最新", BigDecimal.valueOf(300), "測試", LocalDate.now()));
+
+        // 按日期降序排列（預設）
+        mockMvc.perform(get("/api/expenses")
+                        .header("Authorization", "Bearer " + token)
+                        .param("sortBy", "expenseDate")
+                        .param("sortDirection", "desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].title").value("最新"))
+                .andExpect(jsonPath("$.content[2].title").value("最舊"));
+    }
+
+    @Test
+    @DisplayName("測試分頁查詢 - 空結果")
+    void testPagination_EmptyResult() throws Exception {
+        // 不建立任何資料
+
+        mockMvc.perform(get("/api/expenses")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(0)))
+                .andExpect(jsonPath("$.totalElements").value(0))
+                .andExpect(jsonPath("$.totalPages").value(0))
+                .andExpect(jsonPath("$.empty").value(true));
+    }
+
+    @Test
     @DisplayName("測試根據分類查詢支出")
     void testGetExpensesByCategory() throws Exception {
         expenseRepository.save(new Expense(testUser, "早餐", BigDecimal.valueOf(50), "餐飲", LocalDate.now()));
