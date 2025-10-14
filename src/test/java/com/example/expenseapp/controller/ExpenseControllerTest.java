@@ -125,8 +125,9 @@ class ExpenseControllerTest {
         mockMvc.perform(get("/api/expenses")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[*].title", containsInAnyOrder("早餐", "晚餐")));
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.content[*].title", containsInAnyOrder("早餐", "晚餐")))
+                .andExpect(jsonPath("$.totalElements").value(2));
     }
 
     @Test
@@ -482,8 +483,9 @@ class ExpenseControllerTest {
         mockMvc.perform(get("/api/expenses")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].title").value("測試使用者的支出"));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].title").value("測試使用者的支出"))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test
