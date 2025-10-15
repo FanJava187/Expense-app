@@ -231,6 +231,77 @@ GET /api/expenses/search?category=餐飲&startDate=2025-10-01&endDate=2025-10-31
 }
 ```
 
+### 📊 統計 API
+
+**所有統計 API 需要在 Header 加入 JWT Token**
+
+#### 總覽統計
+```bash
+GET /api/statistics/summary?startDate=2025-10-01&endDate=2025-10-31
+Authorization: Bearer {token}
+
+# 回應
+{
+  "totalAmount": 5000.00,      // 總金額
+  "totalCount": 50,             // 總筆數
+  "averageAmount": 100.00,      // 平均金額
+  "maxAmount": 500.00,          // 最大金額
+  "minAmount": 10.00            // 最小金額
+}
+```
+
+#### 分類統計
+```bash
+GET /api/statistics/category?startDate=2025-10-01&endDate=2025-10-31
+Authorization: Bearer {token}
+
+# 回應
+[
+  {
+    "category": "餐飲",
+    "totalAmount": 2000.00,
+    "count": 20,
+    "percentage": 40.00      // 占比
+  }
+]
+```
+
+#### 月度統計（每日）
+```bash
+GET /api/statistics/monthly?year=2025&month=10
+Authorization: Bearer {token}
+
+# 回應：該月每一天的統計
+[
+  {
+    "period": "2025-10-01",
+    "totalAmount": 150.00,
+    "count": 3
+  }
+]
+```
+
+#### 年度統計（每月）
+```bash
+GET /api/statistics/yearly?year=2025
+Authorization: Bearer {token}
+
+# 回應：該年每個月的統計
+[
+  {
+    "period": "2025-10",
+    "totalAmount": 5000.00,
+    "count": 50
+  }
+]
+```
+
+#### 當月/當年統計（便利方法）
+```bash
+GET /api/statistics/current-month
+GET /api/statistics/current-year
+```
+
 ---
 
 ## 🧪 執行測試
@@ -399,12 +470,15 @@ java -jar expense-app.jar
 - [x] 靈活的排序功能
 - [x] 分頁測試覆蓋
 
+### 🚧 開發中（v1.2）
+- [x] 支出統計 API（總覽、分類、月度、年度）
+- [ ] 資料匯出（CSV）
+
 ### 🔜 計劃中（v2.0）
-- [ ] 支出統計 API
-- [ ] 月度/年度報表
-- [ ] 資料匯出（CSV/Excel）
 - [ ] 預算管理
 - [ ] 支出分析圖表
+- [ ] Excel 匯出
+- [ ] 訂閱功能（免費/Pro/Enterprise）
 
 ### 💡 未來構想（v3.0）
 - [ ] 前端介面（React/Vue）
