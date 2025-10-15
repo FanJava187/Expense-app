@@ -3,20 +3,20 @@ package com.example.expenseapp.service;
 import com.example.expenseapp.dto.CategoryStatistics;
 import com.example.expenseapp.dto.PeriodStatistics;
 import com.example.expenseapp.dto.SummaryStatistics;
+import com.example.expenseapp.exception.ResourceNotFoundException;
 import com.example.expenseapp.model.Expense;
 import com.example.expenseapp.model.User;
 import com.example.expenseapp.repository.ExpenseRepository;
+import com.example.expenseapp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -26,13 +26,17 @@ public class StatisticsService {
     @Autowired
     private ExpenseRepository expenseRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     /**
      * 取得當前登入的使用者
      */
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        return (User) userDetails;
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("找不到目前使用者"));
     }
 
     /**
