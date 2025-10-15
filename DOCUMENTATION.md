@@ -275,21 +275,41 @@ Content-Type: application/json
 回應 201 Created
 ```
 
-#### 查詢所有支出
+#### 查詢所有支出（支援分頁）
 ```http
 GET /api/expenses
 Authorization: Bearer {your_token}
 
-回應 200 OK:
-[
-  {
-    "id": 1,
-    "title": "午餐",
-    "amount": 120.50,
-    "category": "餐飲",
-    "expenseDate": "2025-10-08"
-  }
-]
+# 使用分頁參數
+GET /api/expenses?page=0&size=20&sortBy=expenseDate&sortDirection=desc
+Authorization: Bearer {your_token}
+
+回應 200 OK（分頁格式）:
+{
+  "content": [
+    {
+      "id": 1,
+      "title": "午餐",
+      "amount": 120.50,
+      "category": "餐飲",
+      "expenseDate": "2025-10-08"
+    }
+  ],
+  "totalElements": 100,        // 總筆數
+  "totalPages": 5,              // 總頁數
+  "size": 20,                   // 每頁筆數
+  "number": 0,                  // 當前頁碼
+  "first": true,                // 是否第一頁
+  "last": false,                // 是否最後一頁
+  "numberOfElements": 20,       // 當前頁的資料筆數
+  "empty": false                // 是否為空
+}
+
+分頁參數說明：
+- page: 頁碼（從 0 開始，預設 0）
+- size: 每頁筆數（預設 20，建議最大 100）
+- sortBy: 排序欄位（預設 expenseDate，可用: expenseDate, amount, title, category）
+- sortDirection: 排序方向（asc 升序 / desc 降序，預設 desc）
 ```
 
 #### 根據分類查詢
@@ -420,8 +440,16 @@ mvn test -Dtest=ExpenseControllerTest
 
 ### 測試覆蓋率
 - **AuthControllerTest**: 22 個測試
-- **ExpenseControllerTest**: 23 個測試
-- **總計**: 45 個測試案例
+- **ExpenseControllerTest**: 29 個測試（含 6 個分頁測試）
+- **總計**: 51 個測試案例
+
+### 分頁測試案例
+- `testPagination_Basic`: 基本分頁（預設參數）
+- `testPagination_SecondPage`: 第二頁查詢
+- `testPagination_CustomPageSize`: 自訂每頁筆數
+- `testPagination_SortAscending`: 升序排序
+- `testPagination_SortDescending`: 降序排序（預設）
+- `testPagination_EmptyResult`: 空結果處理
 
 ### 使用 Swagger 測試
 ```
@@ -652,6 +680,13 @@ WHERE expires_at < NOW() AND used_at IS NULL;
 
 ## 🔄 更新日誌
 
+### v1.1.0 (2025-10-14)
+- ✅ 新增支出查詢分頁功能
+- ✅ 支援靈活的排序參數（欄位、方向可自訂）
+- ✅ 新增 6 個分頁相關測試案例
+- ✅ 更新 API 文件，包含分頁使用範例
+- ✅ 測試案例總數增加至 51 個
+
 ### v1.0.1 (2025-10-09)
 - ✅ 新增 dotenv-java 支援，使用 .env 文件管理環境變數
 - ✅ 新增 DotenvTestConfig 確保測試環境正確載入環境變數
@@ -667,5 +702,5 @@ WHERE expires_at < NOW() AND used_at IS NULL;
 
 ---
 
-**最後更新日期：** 2025-10-09
-**版本：** 1.0.1
+**最後更新日期：** 2025-10-14
+**版本：** 1.1.0
