@@ -1,6 +1,7 @@
 package com.example.expenseapp.controller;
 
 import com.example.expenseapp.model.Expense;
+import com.example.expenseapp.service.CsvExportService;
 import com.example.expenseapp.service.ExpenseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,13 +12,17 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,9 +33,11 @@ import java.util.Map;
 public class ExpenseController {
 
     private final ExpenseService expenseService;
+    private final CsvExportService csvExportService;
 
-    public ExpenseController(ExpenseService expenseService) {
+    public ExpenseController(ExpenseService expenseService, CsvExportService csvExportService) {
         this.expenseService = expenseService;
+        this.csvExportService = csvExportService;
     }
 
     @Operation(summary = "取得所有支出紀錄（支援分頁）",
@@ -147,6 +154,79 @@ public class ExpenseController {
 
         List<String> categories = expenseService.getCategoriesByDateRange(startDate, endDate);
         return ResponseEntity.ok(categories);
+    }
+
+    @Operation(summary = "匯出所有支出為 CSV", description = "將當前使用者的所有支出匯出為 CSV 檔案")
+    @GetMapping(value = "/export/csv", produces = "text/csv")
+    public ResponseEntity<byte[]> exportAllExpensesToCsv() {
+        try {
+            List<Expense> expenses = expenseService.getAllExpenses();
+            byte[] csvData = csvExportService.exportExpensesToCsv(expenses);
+
+            String filename = "expenses_" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("text/csv; charset=UTF-8"));
+            headers.setContentDispositionFormData("attachment", filename);
+
+            return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Operation(summary = "依日期範圍匯出支出為 CSV", description = "將指定日期範圍內的支出匯出為 CSV 檔案")
+    @GetMapping(value = "/export/csv/date-range", produces = "text/csv")
+    public ResponseEntity<byte[]> exportExpensesByDateRangeToCsv(
+            @Parameter(description = "開始日期", example = "2025-09-01")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @Parameter(description = "結束日期", example = "2025-09-30")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        if (startDate.isAfter(endDate)) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            List<Expense> expenses = expenseService.getExpensesByDateRange(startDate, endDate);
+            byte[] csvData = csvExportService.exportExpensesToCsv(expenses);
+
+            String filename = String.format("expenses_%s_to_%s.csv",
+                    startDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                    endDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("text/csv; charset=UTF-8"));
+            headers.setContentDispositionFormData("attachment", filename);
+
+            return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Operation(summary = "依分類匯出支出為 CSV", description = "將指定分類的所有支出匯出為 CSV 檔案")
+    @GetMapping(value = "/export/csv/category/{category}", produces = "text/csv")
+    public ResponseEntity<byte[]> exportExpensesByCategoryToCsv(
+            @Parameter(description = "支出分類", example = "食物")
+            @PathVariable String category) {
+
+        try {
+            List<Expense> expenses = expenseService.getExpensesByCategory(category);
+            byte[] csvData = csvExportService.exportExpensesToCsv(expenses);
+
+            String filename = String.format("expenses_%s_%s.csv",
+                    category,
+                    LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("text/csv; charset=UTF-8"));
+            headers.setContentDispositionFormData("attachment", filename);
+
+            return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     /**
