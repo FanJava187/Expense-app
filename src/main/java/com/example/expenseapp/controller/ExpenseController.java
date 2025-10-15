@@ -21,6 +21,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -167,7 +168,9 @@ public class ExpenseController {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("text/csv; charset=UTF-8"));
-            headers.setContentDispositionFormData("attachment", filename);
+            headers.setContentDisposition(org.springframework.http.ContentDisposition.attachment()
+                    .filename(filename, StandardCharsets.UTF_8)
+                    .build());
 
             return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
         } catch (IOException e) {
@@ -197,7 +200,9 @@ public class ExpenseController {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("text/csv; charset=UTF-8"));
-            headers.setContentDispositionFormData("attachment", filename);
+            headers.setContentDisposition(org.springframework.http.ContentDisposition.attachment()
+                    .filename(filename, StandardCharsets.UTF_8)
+                    .build());
 
             return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
         } catch (IOException e) {
@@ -221,7 +226,9 @@ public class ExpenseController {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("text/csv; charset=UTF-8"));
-            headers.setContentDispositionFormData("attachment", filename);
+            headers.setContentDisposition(org.springframework.http.ContentDisposition.attachment()
+                    .filename(filename, StandardCharsets.UTF_8)
+                    .build());
 
             return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
         } catch (IOException e) {
