@@ -2,6 +2,7 @@ package com.example.expenseapp.controller;
 
 import com.example.expenseapp.model.Expense;
 import com.example.expenseapp.service.CsvExportService;
+import com.example.expenseapp.service.ExcelExportService;
 import com.example.expenseapp.service.ExpenseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,10 +36,12 @@ public class ExpenseController {
 
     private final ExpenseService expenseService;
     private final CsvExportService csvExportService;
+    private final ExcelExportService excelExportService;
 
-    public ExpenseController(ExpenseService expenseService, CsvExportService csvExportService) {
+    public ExpenseController(ExpenseService expenseService, CsvExportService csvExportService, ExcelExportService excelExportService) {
         this.expenseService = expenseService;
         this.csvExportService = csvExportService;
+        this.excelExportService = excelExportService;
     }
 
     @Operation(summary = "取得所有支出紀錄（支援分頁）",
@@ -231,6 +234,38 @@ public class ExpenseController {
                     .build());
 
             return new ResponseEntity<>(csvData, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @Operation(summary = "依日期範圍匯出支出為 Excel", description = "將指定日期範圍內的支出匯出為豐富格式的 Excel 檔案（包含支出明細、統計摘要和分類統計）")
+    @GetMapping(value = "/export/excel/date-range", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    public ResponseEntity<byte[]> exportExpensesByDateRangeToExcel(
+            @Parameter(description = "開始日期", example = "2025-09-01")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @Parameter(description = "結束日期", example = "2025-09-30")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        if (startDate.isAfter(endDate)) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            List<Expense> expenses = expenseService.getExpensesByDateRange(startDate, endDate);
+            byte[] excelData = excelExportService.exportExpensesToExcel(expenses, startDate, endDate);
+
+            String filename = String.format("expenses_%s_to_%s.xlsx",
+                    startDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                    endDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDisposition(org.springframework.http.ContentDisposition.attachment()
+                    .filename(filename, StandardCharsets.UTF_8)
+                    .build());
+
+            return new ResponseEntity<>(excelData, headers, HttpStatus.OK);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
