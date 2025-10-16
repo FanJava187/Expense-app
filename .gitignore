@@ -26,3 +26,7 @@ Thumbs.db
 # Spring Boot
 *.pid
 spring-boot-devtools.properties
+
+# Claude Code 配置文件
+CLAUDE.md
+IMPROVEMENT_ROADMAP.md
