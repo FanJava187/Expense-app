@@ -55,10 +55,10 @@ public class CsvExportService {
      * @return CSV 格式的字串
      */
     private String formatExpenseAsCsvRow(Expense expense) {
-        return String.format("%d,\"%s\",%s,\"%s\",%s\n",
+        return String.format("%d,\"%s\",%.2f,\"%s\",%s\n",
                 expense.getId(),
                 escapeCsvField(expense.getTitle()),
-                expense.getAmount().toString(),
+                expense.getAmount().doubleValue(),
                 escapeCsvField(expense.getCategory()),
                 expense.getExpenseDate().format(DATE_FORMATTER)
         );

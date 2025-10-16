@@ -156,7 +156,7 @@ public class StatisticsControllerTest {
                         .param("month", "10")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(4)))  // 4天有資料：1, 2, 3, 5, 10
+                .andExpect(jsonPath("$", hasSize(5)))  // 5天有資料：1, 2, 3, 5, 10
                 .andExpect(jsonPath("$[0].period").value("2025-10-01"))
                 .andExpect(jsonPath("$[0].totalAmount").value(230.0))  // 80+150
                 .andExpect(jsonPath("$[0].count").value(2));

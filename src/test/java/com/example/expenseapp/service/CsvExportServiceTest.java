@@ -78,7 +78,8 @@ public class CsvExportServiceTest {
         // 應該只包含標題列
         assertThat(csv).startsWith("\uFEFF");
         assertThat(csv).contains("ID,標題,金額,分類,日期");
-        assertThat(csv.split("\n")).hasSize(2);  // BOM + 標題列 + 換行
+        // 只有標題列,沒有資料列
+        assertThat(csv.split("\n")).hasSize(1);
     }
 
     @Test
