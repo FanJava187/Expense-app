@@ -848,7 +848,12 @@ mvn test -Dtest=ExpenseControllerTest
 ### 測試覆蓋率
 - **AuthControllerTest**: 22 個測試
 - **ExpenseControllerTest**: 29 個測試（含 6 個分頁測試）
-- **總計**: 51 個測試案例
+- **StatisticsControllerTest**: 10 個測試
+- **BudgetControllerTest**: 16 個測試
+- **ChartControllerTest**: 17 個測試
+- **CsvExportServiceTest**: 12 個測試
+- **ExcelExportServiceTest**: 12 個測試
+- **總計**: 118 個測試案例
 
 ### 分頁測試案例
 - `testPagination_Basic`: 基本分頁（預設參數）
