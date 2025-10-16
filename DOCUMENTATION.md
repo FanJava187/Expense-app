@@ -1,9 +1,9 @@
 # Expense App Backend 專案文件
 
 ## 📌 專案簡介
-本專案是一個功能完整的 **支出管理系統 (Expense Management App)**，  
-使用 **Spring Boot 3 + Spring Data JPA + MySQL + Spring Security + OAuth2** 開發。  
-提供完整的 **使用者認證**、**CRUD REST API**、**資料驗證**、**分類查詢**、**日期範圍查詢**等功能。
+本專案是一個功能完整的 **支出管理系統 (Expense Management App)**，
+使用 **Spring Boot 3 + Spring Data JPA + MySQL + Spring Security + OAuth2** 開發。
+提供完整的 **使用者認證**、**支出管理**、**預算控制**、**統計分析**、**圖表資料**、**資料匯出**等功能。
 
 ---
 
@@ -19,6 +19,7 @@
 - **Bean Validation (Hibernate Validator)**
 - **Swagger / OpenAPI (springdoc-openapi)**
 - **JavaMail (Email 發送)**
+- **Apache POI 5.2.5 (Excel 匯出)**
 - **JUnit 5 + MockMvc (單元測試)**
 
 ---
@@ -37,6 +38,7 @@ CREATE DATABASE expense_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 - **users** - 使用者資料（支援傳統註冊和 Google OAuth）
 - **verification_tokens** - Email 驗證和密碼重設 Token
 - **expenses** - 支出紀錄
+- **budgets** - 預算管理（月度預算、分類預算）
 
 ### 3. 設定環境變數
 本專案使用 `.env` 文件管理環境變數，確保敏感資訊不會被提交到版本控制。
@@ -94,19 +96,29 @@ expense-app/
 ├── src/main/java/com/example/expenseapp
 │   ├── controller
 │   │   ├── AuthController.java           # 認證 API
-│   │   └── ExpenseController.java        # 支出 API
+│   │   ├── ExpenseController.java        # 支出 API
+│   │   ├── BudgetController.java         # 預算管理 API
+│   │   ├── StatisticsController.java     # 統計分析 API
+│   │   └── ChartController.java          # 圖表資料 API
 │   ├── model
 │   │   ├── User.java                     # 使用者實體
 │   │   ├── VerificationToken.java        # 驗證 Token
-│   │   └── Expense.java                  # 支出實體
+│   │   ├── Expense.java                  # 支出實體
+│   │   └── Budget.java                   # 預算實體
 │   ├── repository
 │   │   ├── UserRepository.java
 │   │   ├── VerificationTokenRepository.java
-│   │   └── ExpenseRepository.java
+│   │   ├── ExpenseRepository.java
+│   │   └── BudgetRepository.java
 │   ├── service
 │   │   ├── AuthService.java              # 認證邏輯
 │   │   ├── EmailService.java             # Email 發送
-│   │   └── ExpenseService.java           # 支出邏輯
+│   │   ├── ExpenseService.java           # 支出邏輯
+│   │   ├── BudgetService.java            # 預算邏輯
+│   │   ├── StatisticsService.java        # 統計分析邏輯
+│   │   ├── ChartService.java             # 圖表資料邏輯
+│   │   ├── CsvExportService.java         # CSV 匯出
+│   │   └── ExcelExportService.java       # Excel 匯出
 │   ├── security
 │   │   ├── SecurityConfig.java           # Security 設定
 │   │   ├── JwtService.java               # JWT 處理
@@ -116,6 +128,15 @@ expense-app/
 │   │   ├── OAuth2AuthenticationSuccessHandler.java
 │   │   └── OAuth2AuthenticationFailureHandler.java
 │   ├── dto                                # 資料傳輸物件
+│   │   ├── BudgetRequest.java            # 預算請求 DTO
+│   │   ├── BudgetResponse.java           # 預算回應 DTO
+│   │   ├── SummaryStatistics.java        # 總覽統計 DTO
+│   │   ├── CategoryStatistics.java       # 分類統計 DTO
+│   │   ├── PeriodStatistics.java         # 時間統計 DTO
+│   │   ├── TrendData.java                # 趨勢圖資料 DTO
+│   │   ├── PieChartData.java             # 圓餅圖資料 DTO
+│   │   ├── ComparisonData.java           # 比較圖資料 DTO
+│   │   └── TopExpenseItem.java           # 排行榜資料 DTO
 │   ├── exception                          # 例外處理
 │   └── ExpenseAppApplication.java
 │
@@ -131,9 +152,10 @@ expense-app/
 │
 ├── .env                                   # 環境變數（不提交）
 ├── .env.example                           # 環境變數範例
-├── pom.xml
+├── schema.sql                             # 資料庫建表 SQL
+├── pom.xml                                # Maven 設定
 ├── DOCUMENTATION.md                       # 本文件
-└── README.md
+└── README.md                              # 快速開始指南
 ```
 
 ---
@@ -364,6 +386,391 @@ Authorization: Bearer {your_token}
 
 ---
 
+### 預算管理 API
+
+**所有預算 API 都需要 JWT Token 認證**
+
+#### 建立預算
+```http
+# 建立月度預算
+POST /api/budgets
+Authorization: Bearer {your_token}
+Content-Type: application/json
+
+{
+  "budgetType": "MONTHLY",
+  "amount": 10000.00,
+  "year": 2025,
+  "month": 10
+}
+
+# 建立分類預算
+POST /api/budgets
+Authorization: Bearer {your_token}
+Content-Type: application/json
+
+{
+  "budgetType": "CATEGORY",
+  "category": "餐飲",
+  "amount": 3000.00,
+  "year": 2025,
+  "month": 10
+}
+
+回應 201 Created:
+{
+  "id": 1,
+  "budgetType": "MONTHLY",
+  "category": null,
+  "amount": 10000.00,
+  "year": 2025,
+  "month": 10,
+  "spent": 0.00,
+  "remaining": 10000.00,
+  "percentage": 0.0,
+  "createdAt": "2025-10-15",
+  "updatedAt": "2025-10-15"
+}
+```
+
+#### 查詢預算
+```http
+# 取得當月所有預算
+GET /api/budgets/current
+Authorization: Bearer {your_token}
+
+# 取得指定月份預算
+GET /api/budgets?year=2025&month=10
+Authorization: Bearer {your_token}
+
+# 取得單一預算詳情
+GET /api/budgets/{id}
+Authorization: Bearer {your_token}
+
+回應範例（包含計算欄位）:
+{
+  "id": 1,
+  "budgetType": "MONTHLY",
+  "category": null,
+  "amount": 10000.00,
+  "year": 2025,
+  "month": 10,
+  "spent": 5500.00,      // 已使用金額（自動計算）
+  "remaining": 4500.00,  // 剩餘金額（自動計算）
+  "percentage": 55.0,    // 使用百分比（自動計算）
+  "createdAt": "2025-10-01",
+  "updatedAt": "2025-10-01"
+}
+```
+
+#### 更新預算
+```http
+PUT /api/budgets/{id}
+Authorization: Bearer {your_token}
+Content-Type: application/json
+
+{
+  "budgetType": "MONTHLY",
+  "amount": 12000.00,
+  "year": 2025,
+  "month": 10
+}
+
+回應 200 OK（包含最新的計算結果）
+```
+
+#### 刪除預算
+```http
+DELETE /api/budgets/{id}
+Authorization: Bearer {your_token}
+
+回應 204 No Content
+```
+
+**預算類型說明：**
+- **MONTHLY**: 月度總預算，統計該月所有支出
+- **CATEGORY**: 分類預算，統計特定分類的支出
+
+**自動計算欄位：**
+- `spent`: 根據預算類型查詢對應的支出總額
+- `remaining`: amount - spent
+- `percentage`: (spent / amount) × 100
+
+---
+
+### 統計分析 API
+
+**所有統計 API 都需要 JWT Token 認證**
+
+#### 總覽統計
+```http
+GET /api/statistics/summary?startDate=2025-10-01&endDate=2025-10-31
+Authorization: Bearer {your_token}
+
+回應 200 OK:
+{
+  "totalAmount": 5000.00,      // 總金額
+  "totalCount": 50,             // 總筆數
+  "averageAmount": 100.00,      // 平均金額
+  "maxAmount": 500.00,          // 最大金額
+  "minAmount": 10.00            // 最小金額
+}
+```
+
+#### 分類統計
+```http
+GET /api/statistics/category?startDate=2025-10-01&endDate=2025-10-31
+Authorization: Bearer {your_token}
+
+回應 200 OK:
+[
+  {
+    "category": "餐飲",
+    "totalAmount": 2000.00,
+    "count": 20,
+    "percentage": 40.00      // 占總額的百分比
+  },
+  {
+    "category": "交通",
+    "totalAmount": 1500.00,
+    "count": 15,
+    "percentage": 30.00
+  }
+]
+```
+
+#### 月度統計（每日）
+```http
+GET /api/statistics/monthly?year=2025&month=10
+Authorization: Bearer {your_token}
+
+回應 200 OK（該月每一天的統計）:
+[
+  {
+    "period": "2025-10-01",
+    "totalAmount": 150.00,
+    "count": 3
+  },
+  {
+    "period": "2025-10-02",
+    "totalAmount": 200.00,
+    "count": 5
+  }
+]
+```
+
+#### 年度統計（每月）
+```http
+GET /api/statistics/yearly?year=2025
+Authorization: Bearer {your_token}
+
+回應 200 OK（該年每個月的統計）:
+[
+  {
+    "period": "2025-01",
+    "totalAmount": 4500.00,
+    "count": 45
+  },
+  {
+    "period": "2025-02",
+    "totalAmount": 5000.00,
+    "count": 50
+  }
+]
+```
+
+#### 當月/當年統計（便利方法）
+```http
+# 取得當月統計
+GET /api/statistics/current-month
+Authorization: Bearer {your_token}
+
+# 取得當年統計
+GET /api/statistics/current-year
+Authorization: Bearer {your_token}
+```
+
+---
+
+### 圖表資料 API
+
+**所有圖表 API 都需要 JWT Token 認證**
+
+#### 趨勢圖資料（折線圖）
+```http
+# 每日趨勢
+GET /api/charts/trend/daily?year=2025&month=10
+Authorization: Bearer {your_token}
+
+# 月度趨勢
+GET /api/charts/trend/monthly?year=2025
+Authorization: Bearer {your_token}
+
+回應範例（包含所有日期/月份，無資料的顯示 0）:
+[
+  {
+    "period": "2025-10-01",
+    "amount": 150.00,
+    "count": 3
+  },
+  {
+    "period": "2025-10-02",
+    "amount": 0.00,
+    "count": 0
+  }
+]
+```
+
+#### 圓餅圖資料（分類佔比）
+```http
+GET /api/charts/pie/category?startDate=2025-10-01&endDate=2025-10-31
+Authorization: Bearer {your_token}
+
+回應範例:
+[
+  {
+    "label": "餐飲",
+    "value": 3000.00,
+    "percentage": 40.0,
+    "count": 20
+  },
+  {
+    "label": "交通",
+    "value": 2250.00,
+    "percentage": 30.0,
+    "count": 15
+  }
+]
+```
+
+#### 比較圖資料（長條圖）
+```http
+# 月度比較（最近 N 個月）
+GET /api/charts/comparison/monthly?months=6
+Authorization: Bearer {your_token}
+
+# 分類比較
+GET /api/charts/comparison/category?startDate=2025-10-01&endDate=2025-10-31
+Authorization: Bearer {your_token}
+
+回應範例:
+{
+  "labels": ["2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10"],
+  "amounts": [5000.00, 4500.00, 6000.00, 5500.00, 4800.00, 5200.00],
+  "counts": [50, 45, 60, 55, 48, 52]
+}
+```
+
+#### Top N 排行榜
+```http
+GET /api/charts/top-expenses?startDate=2025-10-01&endDate=2025-10-31&limit=10
+Authorization: Bearer {your_token}
+
+回應範例（按金額排序）:
+[
+  {
+    "id": 123,
+    "title": "筆記型電腦",
+    "amount": 35000.00,
+    "category": "電子產品",
+    "expenseDate": "2025-10-15",
+    "rank": 1
+  },
+  {
+    "id": 124,
+    "title": "手機",
+    "amount": 18000.00,
+    "category": "電子產品",
+    "expenseDate": "2025-10-18",
+    "rank": 2
+  }
+]
+```
+
+---
+
+### 資料匯出 API
+
+**所有匯出 API 都需要 JWT Token 認證**
+
+#### CSV 匯出
+
+##### 匯出所有支出
+```http
+GET /api/expenses/export/csv
+Authorization: Bearer {your_token}
+
+# 下載檔案：expenses_20251015.csv
+```
+
+##### 依日期範圍匯出
+```http
+GET /api/expenses/export/csv/date-range?startDate=2025-10-01&endDate=2025-10-31
+Authorization: Bearer {your_token}
+
+# 下載檔案：expenses_20251001_to_20251031.csv
+```
+
+##### 依分類匯出
+```http
+GET /api/expenses/export/csv/category/餐飲
+Authorization: Bearer {your_token}
+
+# 下載檔案：expenses_餐飲_20251015.csv
+```
+
+**CSV 格式：**
+```csv
+ID,標題,金額,分類,日期
+1,"午餐",120.00,"餐飲",2025-10-15
+2,"捷運",30.00,"交通",2025-10-15
+```
+
+**功能特點：**
+- ✅ UTF-8 編碼（含 BOM，Excel 可正確開啟）
+- ✅ 自動處理特殊字元（逗號、引號）
+- ✅ 檔名支援中文（使用 RFC 5987 編碼）
+- ✅ 支援所有查詢條件
+
+#### Excel 匯出
+
+##### 匯出 Excel（多工作表）
+```http
+GET /api/expenses/export/excel/date-range?startDate=2025-10-01&endDate=2025-10-31
+Authorization: Bearer {your_token}
+
+# 下載檔案：expenses_20251001_to_20251031.xlsx
+```
+
+**Excel 檔案結構（3 個工作表）：**
+
+**工作表 1：支出明細**
+- 包含所有支出記錄
+- 欄位：ID、標題、金額、分類、日期
+- 最後一行：總計（使用 SUM 公式自動計算）
+
+**工作表 2：統計摘要**
+- 總支出金額
+- 支出筆數
+- 平均金額
+- 最大金額
+- 最小金額
+
+**工作表 3：分類統計**
+- 各分類的支出金額
+- 各分類的支出筆數
+- 各分類佔總額的百分比
+
+**格式特色：**
+- ✅ 專業樣式（標題灰底、粗體、邊框）
+- ✅ 貨幣格式（千分位逗號，如 1,234.56）
+- ✅ 百分比格式（如 25.50%）
+- ✅ 日期格式（居中對齊）
+- ✅ 自動計算公式（SUM）
+- ✅ UTF-8 編碼（支援中文檔名）
+
+---
+
 ## ✅ 資料驗證規則
 
 ### User（使用者）
@@ -588,6 +995,24 @@ WHERE expires_at < NOW() AND used_at IS NULL;
 | created_at | TIMESTAMP | 建立時間 |
 | updated_at | TIMESTAMP | 更新時間 |
 
+### budgets 資料表
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| id | BIGINT | 主鍵 |
+| user_id | BIGINT | 使用者 ID（外鍵） |
+| budget_type | VARCHAR(20) | 預算類型（MONTHLY / CATEGORY） |
+| category | VARCHAR(50) | 分類名稱（分類預算使用） |
+| amount | DECIMAL(10,2) | 預算金額 |
+| year | INT | 年份 |
+| month | INT | 月份 |
+| created_at | DATE | 建立時間 |
+| updated_at | DATE | 更新時間 |
+
+**索引與約束：**
+- 唯一約束：(user_id, budget_type, category, year, month)
+- 索引：idx_user_year_month, idx_budget_type
+- 外鍵：關聯到 users 資料表（CASCADE DELETE）
+
 ---
 
 ## 🆘 常見問題
@@ -680,6 +1105,34 @@ WHERE expires_at < NOW() AND used_at IS NULL;
 
 ## 🔄 更新日誌
 
+### v2.0.0 (2025-10-16)
+- ✅ **預算管理功能**
+  - 支援月度預算和分類預算
+  - 自動計算已用、剩餘金額和使用百分比
+  - 完整的 CRUD API（6 個端點）
+- ✅ **圖表資料 API**
+  - 趨勢圖：每日趨勢、月度趨勢
+  - 圓餅圖：分類佔比分析
+  - 比較圖：月度比較、分類比較
+  - 排行榜：Top N 高額支出
+- ✅ **Excel 匯出功能**
+  - 多工作表設計（明細、統計、分類）
+  - 專業格式（樣式、貨幣、百分比、公式）
+  - 支援中文檔名（UTF-8 編碼）
+- ✅ 新增 Apache POI 5.2.5 依賴
+- ✅ 更新完整的 API 文件
+
+### v1.2.0 (2025-10-15)
+- ✅ 新增支出統計 API
+  - 總覽統計（總額、筆數、平均、最大/最小）
+  - 分類統計（各分類金額、筆數、佔比）
+  - 月度統計（該月每日資料）
+  - 年度統計（該年每月資料）
+- ✅ 新增 CSV 匯出功能
+  - 支援全部匯出、日期範圍匯出、分類匯出
+  - UTF-8 編碼含 BOM，Excel 可正確開啟
+  - 檔名支援中文（RFC 5987 編碼）
+
 ### v1.1.0 (2025-10-14)
 - ✅ 新增支出查詢分頁功能
 - ✅ 支援靈活的排序參數（欄位、方向可自訂）
@@ -702,5 +1155,5 @@ WHERE expires_at < NOW() AND used_at IS NULL;
 
 ---
 
-**最後更新日期：** 2025-10-14
-**版本：** 1.1.0
+**最後更新日期：** 2025-10-16
+**版本：** 2.0.0
